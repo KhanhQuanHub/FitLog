@@ -412,6 +412,23 @@ export const getWorkouts = (userId, from, to) =>
     `/workouts?userId=${userId}&date_gte=${from}&date_lte=${to}&_expand=exercise&_sort=date,time`
   );
 
+export const createWorkout = (workout) =>
+  request('/workouts', {
+    method: 'POST',
+    body: JSON.stringify(workout),
+  });
+
+export const updateWorkout = (workoutId, workout) =>
+  request(`/workouts/${workoutId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(workout),
+  });
+
+export const deleteWorkout = (workoutId) =>
+  request(`/workouts/${workoutId}`, {
+    method: 'DELETE',
+  });
+
 // Lưu buổi chạy mới lên server (giữ nguyên tên hàm saveRun hiện có)
 export const saveRun = (run) =>
   request('/runs', {
@@ -440,6 +457,20 @@ export function getRunsPage(page = 1, limit = 20) {
 export async function getMyProfile() {
   const list = await request('/profiles');
   return Array.isArray(list) && list.length > 0 ? list[0] : null;
+}
+
+export async function saveMyProfile(profile) {
+  const existing = await getMyProfile();
+  if (existing?.id !== undefined && existing?.id !== null) {
+    return request(`/profiles/${existing.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(profile),
+    });
+  }
+  return request('/profiles', {
+    method: 'POST',
+    body: JSON.stringify(profile),
+  });
 }
 
 /**

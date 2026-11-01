@@ -37,6 +37,8 @@ import {
 import { calculateBmi } from '../domain/bmi';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
+import { saveMyProfile } from '../services/api';
+import { getErrorMessage } from '../utils/errorHandler';
 
 const THEME_MODES: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Sáng' },
@@ -49,6 +51,7 @@ export default function ProfileScreen() {
   const { colors, isDark, themeMode, setThemeMode } = useTheme();
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [editModalVisible, setEditModalVisible] = useState(false);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // State lưu thông tin hồ sơ (khởi tạo từ authStore, giữ nguyên cấu trúc dữ liệu)
   const [profileData, setProfileData] = useState({
@@ -94,7 +97,7 @@ export default function ProfileScreen() {
   };
 
   // Lưu thay đổi từ màn con "Chỉnh sửa hồ sơ"
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     const nextHeight = Math.min(230, Math.max(120, Number(draftHeight) || profileData.height));
     const nextWeight = Math.min(200, Math.max(30, Number(draftWeight) || profileData.weight));
     const nextWorkouts = Math.min(7, Math.max(1, Number(draftWorkouts) || profileData.workoutsPerWeek));
@@ -108,21 +111,38 @@ export default function ProfileScreen() {
       healthCondition: draftHealth.trim() || 'Không có',
     };
 
-    setProfileData(updated);
-    // Đồng bộ vào store hiện hành để màn Chạy bộ dùng chung chiều cao/cân nặng mới
-    if (user) {
-      useAuthStore.setState({
-        user: {
-          ...user,
-          height: updated.height,
-          weight: updated.weight,
-          workoutsPerWeek: updated.workoutsPerWeek,
-          currentGoal: updated.currentGoal,
-          healthCondition: updated.healthCondition,
-        },
+    setIsSavingProfile(true);
+    try {
+      const bmi = calculateBmi(updated.weight, updated.height, colors).bmi;
+      await saveMyProfile({
+        gender: updated.gender === 'Nữ' ? 'female' : 'male',
+        heightCm: updated.height,
+        weightKg: updated.weight,
+        bmi,
+        healthCondition: updated.healthCondition,
+        sessionsPerWeek: updated.workoutsPerWeek,
+        currentGoal: updated.currentGoal,
       });
+
+      setProfileData(updated);
+      if (user) {
+        useAuthStore.setState({
+          user: {
+            ...user,
+            height: updated.height,
+            weight: updated.weight,
+            workoutsPerWeek: updated.workoutsPerWeek,
+            currentGoal: updated.currentGoal,
+            healthCondition: updated.healthCondition,
+          },
+        });
+      }
+      setEditModalVisible(false);
+    } catch (error: unknown) {
+      Alert.alert('Chưa lưu được hồ sơ', getErrorMessage(error));
+    } finally {
+      setIsSavingProfile(false);
     }
-    setEditModalVisible(false);
   };
 
   const handleLogoutPress = () => {
@@ -394,8 +414,16 @@ export default function ProfileScreen() {
                 placeholderTextColor={colors.textMuted}
               />
 
-              <Pressable style={styles.saveModalBtn} onPress={handleSaveProfile}>
-                <Text style={styles.saveModalBtnText}>Lưu hồ sơ</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isSavingProfile }}
+                disabled={isSavingProfile}
+                style={[styles.saveModalBtn, isSavingProfile && styles.saveModalBtnDisabled]}
+                onPress={handleSaveProfile}
+              >
+                <Text style={styles.saveModalBtnText}>
+                  {isSavingProfile ? 'Đang lưu...' : 'Lưu hồ sơ'}
+                </Text>
               </Pressable>
             </ScrollView>
           </View>
@@ -638,6 +666,9 @@ const createStyles = (colors: ThemeColors) =>
     saveModalBtn: {
       minHeight: layout.buttonHeight,
       backgroundColor: colors.primary,
+    },
+    saveModalBtnDisabled: {
+      opacity: 0.6,
       borderRadius: radius.lg,
       alignItems: 'center',
       justifyContent: 'center',

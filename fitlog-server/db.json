@@ -172,97 +172,143 @@
       "id": 1,
       "name": "Hít đất (Push-up)",
       "muscleGroup": "Ngực, tay sau",
+      "primaryMuscleGroup": "Ngực",
+      "secondaryMuscleGroups": [
+        "Tay sau",
+        "Vai"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "none",
       "met": 4.5,
       "impact": "low",
       "sets": 3,
       "reps": 12,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=ejW14LnBDOg"
     },
     {
       "id": 2,
       "name": "Squat tự trọng",
       "muscleGroup": "Chân, mông",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông",
+        "Core"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "none",
       "met": 5,
       "impact": "low",
       "sets": 3,
       "reps": 15,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=lSv_J53UTR0"
     },
     {
       "id": 3,
       "name": "Jumping Jacks",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
       "equipment": "none",
       "met": 8,
       "impact": "high",
       "sets": 3,
       "reps": 0,
       "durationSec": 60,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=0QsXpN0ZzUw"
     },
     {
       "id": 4,
       "name": "Plank",
       "muscleGroup": "Bụng, core",
+      "primaryMuscleGroup": "Bụng",
+      "secondaryMuscleGroups": [
+        "Vai",
+        "Lưng"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "mat",
       "met": 4,
       "impact": "low",
       "sets": 3,
       "reps": 0,
       "durationSec": 45,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=euVFnEry8YY"
     },
     {
       "id": 5,
       "name": "Yoga chào mặt trời",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Lưng",
+        "Chân"
+      ],
+      "activityType": "Yoga / Kéo giãn",
       "equipment": "mat",
       "met": 3,
       "impact": "low",
       "sets": 1,
       "reps": 10,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=-HFrSiz4qgI"
     },
     {
       "id": 6,
       "name": "Nhảy dây",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
       "equipment": "rope",
       "met": 10,
       "impact": "high",
       "sets": 4,
       "reps": 0,
       "durationSec": 120,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=jTHDTxf7Yh4"
     },
     {
       "id": 7,
       "name": "Đạp xe tĩnh",
       "muscleGroup": "Chân",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông"
+      ],
+      "activityType": "Cardio",
       "equipment": "machine",
       "met": 5,
       "impact": "low",
       "sets": 1,
       "reps": 0,
       "durationSec": 1200,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=qXR2YTO40bE"
     },
     {
       "id": 8,
       "name": "Chạy bộ tốc độ vừa (8km/h)",
       "muscleGroup": "Cardio",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân"
+      ],
+      "activityType": "Cardio",
       "equipment": "none",
       "met": 8,
       "impact": "high",
       "sets": 1,
       "reps": 0,
       "durationSec": 1800,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=0-5--O_N_-s"
     }
   ],
   "workouts": [
@@ -331,6 +377,43 @@
       "durationMin": 0,
       "caloriesBurned": 0,
       "note": ""
+    },
+    {
+      "exerciseId": 4,
+      "date": "2026-11-01",
+      "time": "21:00",
+      "status": "done",
+      "durationMin": 30,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 120,
+      "note": "",
+      "userId": 1,
+      "id": 9,
+      "weightKg": 60
+    },
+    {
+      "exerciseId": 5,
+      "date": "2026-11-01",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 300,
+      "caloriesBurned": 0,
+      "note": "ghi chú đây",
+      "userId": 1,
+      "id": 10
+    },
+    {
+      "exerciseId": 6,
+      "date": "2026-11-01",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 12,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 11
     }
   ],
   "runs": [

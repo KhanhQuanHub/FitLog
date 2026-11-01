@@ -24,6 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 import {
   fontSize,
   fontWeight,
@@ -325,21 +326,6 @@ function TodayScreen() {
           </Text>
         </View>
       </View>
-    </SafeAreaView>
-  );
-}
-
-function ScheduleScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Lịch tập</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Lịch tập luyện trong tuần
-      </Text>
     </SafeAreaView>
   );
 }

@@ -455,7 +455,9 @@ export function getRunsPage(page = 1, limit = 20) {
  * @returns {Promise<object | null>}
  */
 export async function getMyProfile() {
-  const list = await request('/profiles');
+  const identity = decodeTokenPayload(await getAuthToken());
+  if (!identity?.id) return null;
+  const list = await request(`/profiles?userId=${encodeURIComponent(identity.id)}`);
   return Array.isArray(list) && list.length > 0 ? list[0] : null;
 }
 

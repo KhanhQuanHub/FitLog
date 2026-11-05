@@ -16,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import RootNavigator from './navigation/RootNavigator';
 import { useThemeStore } from './store/themeStore';
+import { TrainingProvider } from './store/TrainingContext';
 
 export default function App() {
   const isDark = useThemeStore((state) => state.isDark);
@@ -57,7 +58,9 @@ export default function App() {
     <SafeAreaProvider>
       <NavigationContainer theme={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} animated />
-        <RootNavigator />
+        <TrainingProvider>
+          <RootNavigator />
+        </TrainingProvider>
       </NavigationContainer>
     </SafeAreaProvider>
   );

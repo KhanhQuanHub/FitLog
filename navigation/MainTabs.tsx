@@ -20,10 +20,10 @@ import {
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
 
 import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import TodayScreen from '../screens/TodayScreen';
 import {
   fontSize,
   fontWeight,
@@ -291,41 +291,6 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
         );
       })}
     </View>
-  );
-}
-
-function TodayScreen() {
-  const { colors } = useTheme();
-
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Hôm nay</Text>
-
-      <View
-        style={[
-          styles.todayCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
-          <Ionicons name="fitness-outline" size={24} color={colors.primary} />
-        </View>
-        <View style={styles.todayTextCol}>
-          <Text style={[styles.todayBannerTitle, { color: colors.text }]}>
-            Mục tiêu hôm nay: 5.0 km
-          </Text>
-          <Text style={[styles.todayBannerSub, { color: colors.textMuted }]}>
-            Chuyển sang tab Chạy bộ để bắt đầu buổi tập
-          </Text>
-        </View>
-      </View>
-    </SafeAreaView>
   );
 }
 

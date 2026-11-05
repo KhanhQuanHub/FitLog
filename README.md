@@ -2,6 +2,12 @@
 
 Ứng dụng di động giúp người dùng quản lý hồ sơ sức khỏe, lập kế hoạch tập luyện, theo dõi calo tiêu hao và ghi nhận quãng đường chạy bộ. Dữ liệu lưu cục bộ trên máy (offline-first), không cần tài khoản đám mây.
 
+## Thiết lập cá nhân lần đầu
+
+Sau đăng nhập, tài khoản chưa thiết lập sẽ đi qua bốn bước: nhập chỉ số và sức khỏe → khảo sát 8 câu chọn nhiều ý → xem vùng cơ được hệ thống chọn sẵn trên hình trước/sau → xem bài gợi ý và xác nhận. Mỗi câu khảo sát cần ít nhất một ý và luôn có **Không biết / Nhờ hệ thống gợi ý**; có thể chọn mục này ở cả 8 câu để tiếp tục. Mục **Nâng cao** ở bước vùng cơ mặc định thu gọn, mở ra mới có checkbox tự chọn. Hồ sơ và câu trả lời được lưu theo tài khoản trên server; các lần đăng nhập sau vào thẳng màn Hôm nay. Để sửa, chọn **Hồ sơ → Thiết lập lại chỉ số & vùng cơ**.
+
+Xem [cách triển khai theo bài giảng và các nhánh if/else](docs/ONBOARDING.md). Phần mới không cần cài thêm thư viện.
+
 # Xuất thành file apk
 `eas build --platform android --profile preview`
 

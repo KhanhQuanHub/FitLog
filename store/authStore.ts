@@ -9,6 +9,7 @@
 // ============================================================================
 
 import { create } from 'zustand';
+import { normalizeTrainingSetup, type TrainingSetup } from '../domain/training';
 import {
   clearAuthToken,
   getMyProfile,
@@ -29,6 +30,7 @@ export type UserProfile = {
   healthCondition: string;
   workoutsPerWeek: number;
   currentGoal: string;
+  trainingSetup?: TrainingSetup;
 };
 
 export type AuthErrorState = {
@@ -76,12 +78,13 @@ function mapServerUserToProfile(serverUser: any, profileData: any): UserProfile 
     id: String(serverUser?.id ?? '1'),
     fullName: serverUser?.fullName || 'Người dùng FitLog',
     email: serverUser?.email || '',
-    gender: profileData?.gender === 'female' ? 'Nữ' : 'Nam',
+    gender: profileData?.gender === 'female' ? 'Nữ' : profileData?.gender === 'other' ? 'Khác' : 'Nam',
     height: Number(profileData?.heightCm) || 170,
     weight: Number(profileData?.weightKg) || 60,
     healthCondition: profileData?.healthCondition || 'Không có',
     workoutsPerWeek: Number(profileData?.sessionsPerWeek) || 4,
     currentGoal: profileData?.currentGoal || 'Nâng cao sức bền',
+    trainingSetup: normalizeTrainingSetup(profileData?.trainingSetup) ?? undefined,
   };
 }
 

@@ -58,9 +58,75 @@
       "weightKg": 60,
       "bmi": 19.6,
       "bmiGroup": "normal",
-      "healthCondition": "none",
-      "sessionsPerWeek": 4,
-      "calibratedStrideM": null
+      "healthCondition": "Không có",
+      "sessionsPerWeek": 3,
+      "calibratedStrideM": null,
+      "age": 22,
+      "currentGoal": "Sức khỏe",
+      "trainingSetup": {
+        "version": 2,
+        "height": 175,
+        "weight": 60,
+        "age": 22,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "health"
+            ],
+            "focus": [
+              "balanced"
+            ],
+            "activity": [
+              "sitting"
+            ],
+            "styles": [
+              "gentle",
+              "mobility",
+              "walking"
+            ],
+            "places": [
+              "home"
+            ],
+            "equipment": [
+              "bodyweight"
+            ],
+            "intensity": [
+              "light",
+              "gradual"
+            ],
+            "barriers": [
+              "time",
+              "motivation",
+              "technique",
+              "space"
+            ]
+          }
+        }
+      }
     },
     {
       "id": 2,
@@ -414,6 +480,19 @@
       "note": "",
       "userId": 1,
       "id": 11
+    },
+    {
+      "exerciseId": 3,
+      "date": "2026-11-06",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 12,
+      "weightKg": 60
     }
   ],
   "runs": [

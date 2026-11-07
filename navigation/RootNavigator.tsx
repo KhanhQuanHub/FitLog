@@ -8,22 +8,10 @@
 
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
-import MainTabs from './MainTabs';
+import { Stack } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
 import { useLocationStore } from '../store/locationStore';
-
-export type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  Main: undefined;
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
@@ -54,21 +42,20 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator
+    <Stack
       screenOptions={{
         headerShown: false,
         animation: 'fade',
       }}
     >
-      {!isLoggedIn ? (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-        </>
-      ) : (
-        <Stack.Screen name="Main" component={MainTabs} />
-      )}
-    </Stack.Navigator>
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+      </Stack.Protected>
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 

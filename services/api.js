@@ -12,6 +12,7 @@
 
 import * as SecureStore from 'expo-secure-store';
 import { API_TIMEOUT_MS, BASE_URL, getBaseUrl, getBaseUrlAsync } from './config';
+import { setStatisticsIdentity } from './statisticsSession';
 
 export { BASE_URL, getBaseUrl, getBaseUrlAsync };
 
@@ -111,6 +112,7 @@ export async function getAuthToken() {
     if (available) {
       const stored = await SecureStore.getItemAsync(TOKEN_STORAGE_KEY);
       memoryToken = stored || null;
+      setStatisticsIdentity(decodeTokenPayload(memoryToken)?.id ?? null);
       return memoryToken;
     }
   } catch {
@@ -127,6 +129,7 @@ export async function getAuthToken() {
  */
 export async function setAuthToken(token) {
   memoryToken = token || null;
+  setStatisticsIdentity(decodeTokenPayload(memoryToken)?.id ?? null);
   try {
     const available = await SecureStore.isAvailableAsync();
     if (!available) return;
@@ -454,4 +457,20 @@ export function updateProfileCalibratedStride(profileId, calibratedStrideM) {
     method: 'PATCH',
     body: JSON.stringify({ calibratedStrideM }),
   });
+}
+
+export function getAllWorkouts() {
+  return request('/workouts?_expand=exercise&_sort=date&_order=desc');
+}
+
+export function getAllRuns() {
+  return request('/runs?_sort=date&_order=desc');
+}
+
+export function getUserGoals() {
+  return request('/userGoals?_expand=goal');
+}
+
+export function getWeightHistory() {
+  return request('/weightHistory?_sort=date&_order=asc');
 }

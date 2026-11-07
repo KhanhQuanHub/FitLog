@@ -13,17 +13,13 @@
 // ============================================================================
 
 import React, { memo } from 'react';
-import {
-  BottomTabBarProps,
-  createBottomTabNavigator,
-} from '@react-navigation/bottom-tabs';
+import { Tabs } from 'expo-router';
+import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
-import RunScreen from '../screens/running/RunScreen';
-import ProfileScreen from '../screens/ProfileScreen';
 import {
   fontSize,
   fontWeight,
@@ -41,7 +37,7 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
-const Tab = createBottomTabNavigator<MainTabParamList>();
+const ROUTE_KEYS: Record<string, keyof MainTabParamList> = { index: 'Today', schedule: 'Schedule', run: 'Run', statistics: 'Stats', profile: 'Profile' };
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
   Today: 'Hôm nay',
@@ -200,7 +196,7 @@ const TabSvgIcon = memo(function TabSvgIcon({
  * - Nền tròn nhạt (pill 56x32px) bao trọn icon 24px khi tab được chọn.
  * - Tự động cộng vùng đệm an toàn dưới đáy (useSafeAreaInsets) để không đè lên home indicator.
  */
-function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
 
@@ -222,7 +218,7 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
     >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const routeName = route.name as keyof MainTabParamList;
+        const routeName = ROUTE_KEYS[route.name];
         const label =
           typeof options.tabBarLabel === 'string'
             ? options.tabBarLabel
@@ -232,19 +228,19 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
         const itemColor = isFocused ? colors.primary : colors.textMuted;
 
         const onPress = () => {
-          const event = navigation.emit({
+          const event = emitter.emit({
             type: 'tabPress',
             target: route.key,
             canPreventDefault: true,
           });
 
           if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name);
+            navigateToTab(route.key);
           }
         };
 
         const onLongPress = () => {
-          navigation.emit({
+          emitter.emit({
             type: 'tabLongPress',
             target: route.key,
           });
@@ -255,6 +251,7 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={isFocused ? { selected: true } : {}}
+            aria-selected={isFocused}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
             onPress={onPress}
             onLongPress={onLongPress}
@@ -294,7 +291,7 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
   );
 }
 
-function TodayScreen() {
+export function TodayScreen() {
   const { colors } = useTheme();
 
   return (
@@ -329,7 +326,7 @@ function TodayScreen() {
   );
 }
 
-function ScheduleScreen() {
+export function ScheduleScreen() {
   const { colors } = useTheme();
   return (
     <SafeAreaView
@@ -344,56 +341,36 @@ function ScheduleScreen() {
   );
 }
 
-function StatsScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Thống kê</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Tổng hợp quãng đường và năng lượng tiêu hao
-      </Text>
-    </SafeAreaView>
-  );
-}
 
 export default function MainTabs() {
   return (
-    <Tab.Navigator
-      initialRouteName="Today"
+    <Tabs
       tabBar={(props) => <FitLogBottomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Tab.Screen
-        name="Today"
-        component={TodayScreen}
+      <Tabs.Screen
+        name="index"
         options={{ tabBarLabel: 'Hôm nay' }}
       />
-      <Tab.Screen
-        name="Schedule"
-        component={ScheduleScreen}
+      <Tabs.Screen
+        name="schedule"
         options={{ tabBarLabel: 'Lịch tập' }}
       />
-      <Tab.Screen
-        name="Run"
-        component={RunScreen}
+      <Tabs.Screen
+        name="run"
         options={{ tabBarLabel: 'Chạy bộ' }}
       />
-      <Tab.Screen
-        name="Stats"
-        component={StatsScreen}
+      <Tabs.Screen
+        name="statistics"
         options={{ tabBarLabel: 'Thống kê' }}
       />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
+      <Tabs.Screen
+        name="profile"
         options={{ tabBarLabel: 'Hồ sơ' }}
       />
-    </Tab.Navigator>
+    </Tabs>
   );
 }
 

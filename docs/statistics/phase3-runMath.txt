@@ -1,0 +1,15 @@
+(node:21820) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/FitLog/utils/runMath.test.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to D:\FitLog\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[PASS] 1. Sải chân công thức: nam 175cm -> 0.726m, nữ 162cm -> 0.669m
+[PASS] 2. Ưu tiên calibratedStrideM trong profile khi khác null
+[PASS] 3. Hiệu chuẩn sải chân 400m: hợp lệ trong [0.4, 1.6] và sai số quãng đường < 5%
+[PASS] 4. Từ chối sải chân hiệu chuẩn ngoài khoảng 0.4m - 1.6m
+[PASS] 5. Khớp chính xác 100% với bản ghi mẫu trong đề bài (5645 bước, 1800s, 60kg)
+[PASS] 6. Nội suy tuyến tính MET theo vận tốc (4->3.0, 8->8.0, 10->11.5, 12->12.5)
+[PASS] 7. Chia cho 0: distance < 10m (0.01km) hoặc duration = 0 -> pace "--:--"
+[PASS] 8. Cadence cửa sổ trượt 30s tính đúng bước/phút
+[PASS] 9. Chạy lúc 00:30 giờ Việt Nam (UTC+7): date là ngày hôm đó, không bị lùi về hôm trước như UTC
+
+Tổng kết kiểm thử logic thuần: 9/9 PASS

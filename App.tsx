@@ -3,21 +3,21 @@
 // Điểm khởi đầu ứng dụng FitLog:
 // - Đảm bảo tải trước bộ font icon (@expo/vector-icons Ionicons) bằng useFonts
 //   trước khi hiển thị giao diện để tránh lỗi mất/cắt chữ icon trên Android.
-// - Đồng bộ chủ đề Sáng / Tối với NavigationContainer và SafeAreaProvider.
+// - Đồng bộ chủ đề Sáng / Tối với Expo Router và SafeAreaProvider.
 // ============================================================================
 
 import { useEffect } from 'react';
+import type { ReactNode } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { DarkTheme, DefaultTheme, NavigationContainer } from '@react-navigation/native';
+import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
-import RootNavigator from './navigation/RootNavigator';
 import { useThemeStore } from './store/themeStore';
 
-export default function App() {
+export default function App({ children }: { children: ReactNode }) {
   const isDark = useThemeStore((state) => state.isDark);
   const colors = useThemeStore((state) => state.colors);
   const initTheme = useThemeStore((state) => state.initTheme);
@@ -55,10 +55,10 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer theme={navigationTheme}>
+      <ThemeProvider value={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} animated />
-        <RootNavigator />
-      </NavigationContainer>
+        {children}
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

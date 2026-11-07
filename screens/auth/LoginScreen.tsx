@@ -26,7 +26,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { router } from 'expo-router';
 import { Controller, useForm } from 'react-hook-form';
 
 import Input from '../../components/ui/Input';
@@ -43,13 +43,10 @@ import {
   loginSchema,
   safeZodResolver,
 } from '../../domain/authSchema';
-import { RootStackParamList } from '../../navigation/RootNavigator';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../store/themeStore';
 
-type Props = NativeStackScreenProps<RootStackParamList, 'Login'>;
-
-export default function LoginScreen({ navigation }: Props) {
+export default function LoginScreen() {
   const [secureText, setSecureText] = useState(true);
   const [isAppBackgrounded, setIsAppBackgrounded] = useState(false);
 
@@ -302,7 +299,7 @@ export default function LoginScreen({ navigation }: Props) {
               onPress={() => {
                 clearError();
                 clearRegistrationSuccess();
-                navigation.navigate('Register');
+                router.push('/register');
               }}
               disabled={busy}
             >

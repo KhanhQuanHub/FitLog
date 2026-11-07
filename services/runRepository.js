@@ -13,6 +13,11 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
+  getStatisticsSession,
+  rememberQueuedRunOwner,
+  notifyRunStatisticsChanged,
+} from './statisticsSession';
+import {
   getMyProfile,
   getRunsPage,
   saveRun,
@@ -187,6 +192,7 @@ export async function getQueuedRuns() {
  */
 export async function enqueueRun(runRecord) {
   if (!runRecord || !runRecord.clientId) return getQueuedRuns();
+  const statisticsSession = getStatisticsSession();
   const currentQueue = await getQueuedRuns();
   const existingIndex = currentQueue.findIndex((item) => item.clientId === runRecord.clientId);
 
@@ -205,6 +211,8 @@ export async function enqueueRun(runRecord) {
   }
 
   await storageAdapter.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(nextQueue));
+  if (existingIndex < 0) rememberQueuedRunOwner(runRecord.clientId, statisticsSession);
+  notifyRunStatisticsChanged();
   return nextQueue;
 }
 
@@ -218,6 +226,7 @@ export async function removeQueuedRun(clientId) {
   const currentQueue = await getQueuedRuns();
   const nextQueue = currentQueue.filter((item) => item.clientId !== clientId);
   await storageAdapter.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(nextQueue));
+  notifyRunStatisticsChanged();
   return nextQueue;
 }
 
@@ -287,6 +296,7 @@ async function prependToHistoryCache(savedRun) {
     const current = await getCachedHistory();
     const updated = dedupeRuns([savedRun], current).slice(0, MAX_CACHED_HISTORY_ITEMS);
     await storageAdapter.setItem(STORAGE_KEYS.HISTORY_CACHE, JSON.stringify(updated));
+    notifyRunStatisticsChanged();
   } catch {
     // Bỏ qua lỗi ghi bộ nhớ đệm
   }

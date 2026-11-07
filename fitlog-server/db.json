@@ -2,7 +2,7 @@
   "users": [
     {
       "id": 1,
-      "email": "quan@figlog.vn",
+      "email": "quan@fitlog.vn",
       "password": "123456",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
@@ -47,6 +47,14 @@
       "role": "user",
       "createdAt": "2026-10-29T00:15:54.837Z",
       "id": 6
+    },
+    {
+      "email": "quan1@gmail.com",
+      "password": "@KQuan12",
+      "fullName": "Nguyễn Khánh Quân",
+      "role": "user",
+      "createdAt": "2026-11-07T09:03:54.443Z",
+      "id": 7
     }
   ],
   "profiles": [
@@ -139,6 +147,78 @@
       "healthCondition": "joint",
       "sessionsPerWeek": 3,
       "calibratedStrideM": null
+    },
+    {
+      "userId": 7,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 25,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Sức khỏe + Tăng cơ",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 25,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "muscle",
+              "health"
+            ],
+            "focus": [
+              "upper"
+            ],
+            "activity": [
+              "physical"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "chair"
+            ],
+            "intensity": [
+              "challenge"
+            ],
+            "barriers": [
+              "motivation"
+            ]
+          }
+        }
+      },
+      "id": 3
     }
   ],
   "weightHistory": [

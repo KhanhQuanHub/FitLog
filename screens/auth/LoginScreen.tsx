@@ -12,7 +12,6 @@
 import React, { ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   AppState,
   KeyboardAvoidingView,
   Platform,
@@ -69,7 +68,6 @@ export default function LoginScreen({ navigation }: Props) {
   const {
     control,
     handleSubmit,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: safeZodResolver<LoginFormData>(loginSchema),
@@ -130,17 +128,6 @@ export default function LoginScreen({ navigation }: Props) {
       // Không bao giờ ném lỗi chưa bắt ra console
     }
   }, [handleSubmit, onSubmit]);
-
-  const handleForgotPassword = useCallback(() => {
-    const currentEmail = getValues('email').trim().toLowerCase();
-    Alert.alert(
-      'Đặt lại mật khẩu',
-      currentEmail
-        ? `Hướng dẫn khôi phục mật khẩu sẽ được gửi tới ${currentEmail} nếu tài khoản tồn tại.`
-        : 'Vui lòng nhập địa chỉ email của bạn vào ô Email phía trên để nhận hướng dẫn đặt lại mật khẩu.',
-      [{ text: 'Đã hiểu', style: 'default' }]
-    );
-  }, [getValues]);
 
   const busy = isLoading || isSubmitting;
   const styles = useMemo(() => createStyles(colors), [colors]);
@@ -249,7 +236,7 @@ export default function LoginScreen({ navigation }: Props) {
               <Pressable
                 accessibilityRole="button"
                 style={styles.forgotBtn}
-                onPress={handleForgotPassword}
+                onPress={() => navigation.navigate('ForgotPassword')}
                 disabled={busy}
               >
                 <Text style={styles.forgotText}>Quên mật khẩu?</Text>

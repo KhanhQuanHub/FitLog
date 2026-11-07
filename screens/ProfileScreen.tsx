@@ -45,17 +45,28 @@ export default function ProfileScreen() {
         <Button title="Chỉnh sửa" accessibilityLabel="Thiết lập lại chỉ số & vùng cơ" icon="options-outline" onPress={() => navigation.navigate('EditTraining')} />
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Thông tin</Text>
-          {setup.goalAnswers && <Text numberOfLines={2} style={[styles.text, { color: colors.textSecondary }]}>{answerSummary(setup.goalAnswers, 'goals')}</Text>}
-          <Text style={[styles.text, { color: colors.textSecondary }]}>{setup.gender} · {setup.height} cm · {setup.sessions} buổi/tuần</Text>
-          <Text style={[styles.text, { color: colors.textSecondary }]}>Sức khỏe: {healthLabel(setup.conditions)}</Text>
-          {setup.conditions.includes('other') && <Text style={[styles.text, { color: colors.textSecondary }]}>{setup.healthNote}</Text>}
+          {setup.goalAnswers && <Text numberOfLines={2} style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Mục tiêu:</Text> {answerSummary(setup.goalAnswers, 'goals')}</Text>}
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Giới tính:</Text> {setup.gender}</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Chiều cao:</Text> {setup.height} cm</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Tần suất:</Text> {setup.sessions} buổi/tuần</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Sức khỏe:</Text> {healthLabel(setup.conditions)}</Text>
+          {setup.conditions.includes('other') && !!setup.healthNote && <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Ghi chú sức khỏe:</Text> {setup.healthNote}</Text>}
           <Pressable accessibilityRole="button" accessibilityLabel="Xem khảo sát đã lưu" accessibilityState={{ expanded: showSurvey }} aria-expanded={showSurvey} onPress={() => setShowSurvey(value => !value)} style={styles.row}>
             <Text style={[styles.text, { color: colors.text }]}>Khảo sát</Text><Ionicons name={showSurvey ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textMuted} />
           </Pressable>
           {showSurvey && <>
-            {setup.goalAnswers && TRAINING_QUESTIONS.map(question => <Text key={question.id} style={[styles.small, { color: colors.textSecondary }]}>{question.title} {answerSummary(setup.goalAnswers!, question.id)}</Text>)}
-            <Text style={[styles.small, { color: colors.textSecondary }]}>Vùng cơ: {setup.muscles.map(muscleLabel).join(', ')}</Text>
-            <Text style={[styles.small, { color: colors.textMuted }]}>Sải chân ước tính: {strideCm} cm · {setup.minutes} phút/buổi</Text>
+            {setup.goalAnswers && TRAINING_QUESTIONS.map(question => <View key={question.id} style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>{question.title}</Text>
+              <Text style={[styles.small, { color: colors.textSecondary }]}>{answerSummary(setup.goalAnswers!, question.id) || 'Chưa có câu trả lời'}</Text>
+            </View>)}
+            <View style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>Vùng cơ</Text>
+              <Text style={[styles.small, { color: colors.textSecondary }]}>{setup.muscles.map(muscleLabel).join(', ') || 'Chưa chọn vùng cơ'}</Text>
+            </View>
+            <View style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>Thông tin bổ sung</Text>
+              <Text style={[styles.small, { color: colors.textMuted }]}>Sải chân ước tính: {strideCm} cm · {setup.minutes} phút/buổi</Text>
+            </View>
           </>}
         </View>
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -92,6 +103,9 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center', gap: spacing.xs }, statValue: { fontSize: fontSize.title, fontWeight: fontWeight.bold },
   panel: { padding: spacing.lg, borderWidth: 1, borderRadius: radius.lg, gap: spacing.md },
   sectionTitle: { fontSize: fontSize.subtitle, fontWeight: fontWeight.bold }, text: { fontSize: fontSize.body, lineHeight: 25 }, small: { fontSize: fontSize.caption, lineHeight: 22 },
+  infoLabel: { fontWeight: fontWeight.bold },
+  surveyAnswer: { gap: spacing.xs },
+  surveyQuestion: { fontSize: fontSize.caption, fontWeight: fontWeight.bold, lineHeight: 22 },
   themeRow: { flexDirection: 'row', gap: spacing.sm }, themeButton: { flex: 1, minHeight: layout.minTouchSize, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   row: { minHeight: layout.minTouchSize, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
   overlay: { flex: 1, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' },

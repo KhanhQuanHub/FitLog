@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -47,11 +48,14 @@ import { localDateString } from '../utils/dateLocal';
 import { getErrorMessage } from '../utils/errorHandler';
 import { fontSize, fontWeight, layout, radius, spacing } from '../constants/theme';
 import { formatInt } from '../utils/format';
+import { cancelWorkoutReminder, syncWorkoutReminders } from '../services/workoutReminders';
 
 type CalendarMode = 'week' | 'month';
 
 export default function ScheduleScreen() {
-  const { user } = useAuthStore();
+  const userId = useAuthStore((state) => state.user?.id);
+  const healthCondition = useAuthStore((state) => state.user?.healthCondition);
+  const userWeight = useAuthStore((state) => state.user?.weight);
   const { colors, isDark } = useTheme();
   const [selectedDate, setSelectedDate] = useState(() => localDateString());
   const [calendarMode, setCalendarMode] = useState<CalendarMode>('week');
@@ -68,14 +72,16 @@ export default function ScheduleScreen() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [showMetReferences, setShowMetReferences] = useState(false);
   const requestId = useRef(0);
+  const reminderPermissionRequested = useRef(false);
 
   const monthDate = useMemo(() => parseISO(selectedDate), [selectedDate]);
   const monthKey = format(monthDate, 'yyyy-MM');
-  const weightKg = Number(user?.weight) > 0 ? Number(user?.weight) : 60;
+  const weightKg = Number(userWeight) > 0 ? Number(userWeight) : 60;
 
   const loadSchedule = useCallback(async (
     date = `${monthKey}-01`,
-    showLoading = true
+    showLoading = true,
+    requestReminderPermission = false
   ) => {
     const currentRequestId = ++requestId.current;
     const targetDate = parseISO(date);
@@ -87,15 +93,46 @@ export default function ScheduleScreen() {
       setLoadError(null);
     }
     try {
-      const [exerciseList, workoutList] = await Promise.all([
-        getSafeExercises(user?.healthCondition),
-        getWorkouts(user?.id ?? '', from, to),
+      const shouldCheckUpcomingReminders = requestReminderPermission || !reminderPermissionRequested.current;
+      const reminderEndDate = new Date();
+      reminderEndDate.setDate(reminderEndDate.getDate() + 60);
+      const upcomingWorkoutsRequest = shouldCheckUpcomingReminders && userId !== undefined && userId !== null
+        ? getWorkouts(userId, localDateString(), localDateString(reminderEndDate))
+        : Promise.resolve([]);
+      const [exerciseList, workoutList, upcomingWorkouts] = await Promise.all([
+        getSafeExercises(healthCondition),
+        getWorkouts(userId ?? '', from, to),
+        upcomingWorkoutsRequest,
       ]);
 
       if (requestId.current !== currentRequestId) return;
       setExercises(Array.isArray(exerciseList) ? exerciseList : []);
       setWorkouts(Array.isArray(workoutList) ? workoutList : []);
       setActionError(null);
+      if (userId !== undefined && userId !== null) {
+        try {
+          const shouldRequestPermission = requestReminderPermission || !reminderPermissionRequested.current;
+          const remindersById = new Map(
+            [...(Array.isArray(workoutList) ? workoutList : []), ...(Array.isArray(upcomingWorkouts) ? upcomingWorkouts : [])]
+              .map(workout => [String(workout.id), workout])
+          );
+          const reminderResult = await syncWorkoutReminders(
+            userId,
+            [...remindersById.values()],
+            shouldRequestPermission
+          );
+          if (requestId.current !== currentRequestId) return;
+          if (shouldRequestPermission && (reminderResult.scheduledCount > 0 || !reminderResult.permissionGranted)) {
+            reminderPermissionRequested.current = true;
+          }
+          if (!reminderResult.permissionGranted && Platform.OS !== 'web') {
+            setActionError('Đã tải lịch tập nhưng chưa bật được thông báo. Hãy cho phép FitLog gửi thông báo trong cài đặt điện thoại.');
+          }
+        } catch (error: unknown) {
+          if (requestId.current !== currentRequestId) return;
+          setActionError(`Chưa đồng bộ được nhắc lịch tập: ${getErrorMessage(error)}`);
+        }
+      }
     } catch (error: unknown) {
       if (requestId.current !== currentRequestId) return;
       if (showLoading) {
@@ -106,7 +143,7 @@ export default function ScheduleScreen() {
     } finally {
       if (requestId.current === currentRequestId && showLoading) setIsLoading(false);
     }
-  }, [monthKey, user?.healthCondition, user?.id]);
+  }, [healthCondition, monthKey, userId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -175,7 +212,7 @@ export default function ScheduleScreen() {
       setSelectedDate(input.date);
       setEditorVisible(false);
       setEditingWorkout(null);
-      await loadSchedule(input.date, false);
+      await loadSchedule(input.date, false, true);
     } catch (error: unknown) {
       setActionError(`Chưa lưu được lịch tập: ${getErrorMessage(error)}`);
     } finally {
@@ -191,6 +228,11 @@ export default function ScheduleScreen() {
       await deleteWorkout(workout.id);
       setWorkouts((current) => current.filter((item) => item.id !== workout.id));
       await loadSchedule(workout.date, false);
+      try {
+        await cancelWorkoutReminder(workout.userId, workout.id);
+      } catch (error: unknown) {
+        setActionError(`Đã xóa buổi tập nhưng chưa hủy được nhắc nhở: ${getErrorMessage(error)}`);
+      }
     } catch (error: unknown) {
       setActionError(`Chưa xóa được buổi tập: ${getErrorMessage(error)}`);
     } finally {

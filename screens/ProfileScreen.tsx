@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fontSize, fontWeight, layout, radius, spacing, type ThemeMode } from '../constants/theme';
@@ -10,6 +10,9 @@ import { useTraining } from '../store/TrainingContext';
 import { useTheme } from '../store/themeStore';
 import Button from '../components/ui/Button';
 import TrainingSetupScreen from './TrainingSetupScreen';
+import { getWorkouts } from '../services/api';
+import { localDateString } from '../utils/dateLocal';
+import { getWorkoutRemindersEnabled, setWorkoutRemindersEnabled, syncWorkoutReminders } from '../services/workoutReminders';
 
 const THEME_MODES: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Sáng' }, { mode: 'dark', label: 'Tối' }, { mode: 'system', label: 'Tự động' },
@@ -23,6 +26,27 @@ export default function ProfileScreen() {
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderError, setReminderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id === undefined || user?.id === null) return;
+    let active = true;
+    getWorkoutRemindersEnabled(user.id)
+      .then((enabled) => {
+        if (active) setReminderEnabled(enabled);
+      })
+      .catch((error) => {
+        if (active)
+          setReminderError(
+            error instanceof Error ? error.message : 'Không tải được cài đặt nhắc lịch.'
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
   if (!user) return null;
   if (!setup || editingSetup) {
     const mode = setup ? 'EditTraining' : 'Onboarding';
@@ -36,6 +60,35 @@ export default function ProfileScreen() {
   const bmi = calculateBmi(setup.weight, setup.height, colors);
   const initial = user.fullName.trim().split(' ').pop()?.charAt(0).toUpperCase() || 'F';
   const strideCm = Math.round(setup.height * (setup.gender === 'Nữ' ? 0.413 : 0.415) * 10) / 10;
+
+  const updateReminderPreference = async (enabled: boolean) => {
+    setReminderBusy(true);
+    setReminderError(null);
+    try {
+      await setWorkoutRemindersEnabled(user.id, enabled);
+      setReminderEnabled(enabled);
+      if (enabled) {
+        const from = localDateString();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 60);
+        const upcoming = await getWorkouts(user.id, from, localDateString(endDate));
+        const result = await syncWorkoutReminders(
+          user.id,
+          Array.isArray(upcoming) ? upcoming : [],
+          true
+        );
+        if (!result.permissionGranted) {
+          setReminderError(Platform.OS === 'web'
+            ? 'Nhắc lịch tập chỉ khả dụng trên ứng dụng điện thoại.'
+            : 'Đã bật nhắc lịch nhưng chưa có quyền gửi thông báo. Hãy cấp quyền cho FitLog trong cài đặt điện thoại.');
+        }
+      }
+    } catch (error: unknown) {
+      setReminderError(error instanceof Error ? error.message : 'Chưa cập nhật được cài đặt nhắc lịch.');
+    } finally {
+      setReminderBusy(false);
+    }
+  };
 
   return <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -82,7 +135,8 @@ export default function ProfileScreen() {
             style={[styles.themeButton, { backgroundColor: item.mode === themeMode ? colors.primaryLight : colors.surfaceAlt }]}>
             <Text style={[styles.text, { color: colors.text }]}>{item.label}</Text>
           </Pressable>)}</View>
-          <View style={styles.row}><Text style={[styles.text, { color: colors.text }]}>Nhắc nhở luyện tập</Text><Switch accessibilityLabel="Nhắc nhở luyện tập" value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: colors.primary }} /></View>
+          <View style={styles.row}><Text style={[styles.text, { color: colors.text }]}>Nhắc nhở luyện tập</Text><Switch accessibilityLabel="Nhắc nhở luyện tập" value={reminderEnabled} disabled={reminderBusy} onValueChange={value => void updateReminderPreference(value)} trackColor={{ true: colors.primary }} /></View>
+          {reminderError && <Text accessibilityRole="alert" style={[styles.small, { color: colors.danger }]}>{reminderError}</Text>}
         </View>
         <Text style={[styles.small, { color: colors.textMuted }]}>Gợi ý tham khảo, không thay thế tư vấn y tế.</Text>
         <Button title="Đăng xuất" variant="danger" icon="log-out-outline" onPress={() => setLogoutVisible(true)} />

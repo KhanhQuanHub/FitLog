@@ -15,6 +15,7 @@
   "users": [
     {
       "id": 1,
+      "name": "Nguyễn Khánh Quân",
       "email": "quan@figlog.vn",
       "password": "123456",
       "fullName": "Nguyễn Khánh Quân",
@@ -23,6 +24,7 @@
     },
     {
       "id": 2,
+      "name": "Thanh Hà",
       "email": "ha@figlog.vn",
       "password": "123456",
       "fullName": "Thanh Hà",
@@ -31,6 +33,7 @@
     },
     {
       "id": 3,
+      "name": "Quản trị viên",
       "email": "admin@figlog.vn",
       "password": "admin123",
       "fullName": "Quản trị viên",

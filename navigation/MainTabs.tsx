@@ -1,6 +1,6 @@
 // ============================================================================
 // navigation/MainTabs.tsx
-// Thanh điều hướng 5 tab dưới cùng (Hôm nay, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
+// Thanh điều hướng 5 tab dưới cùng (Mục tiêu, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
 // - Khắc phục triệt để lỗi icon bị cắt mất một nửa bên phải:
 //   1. Bỏ qua TabBarIcon mặc định của @react-navigation/bottom-tabs (vốn ép khung
 //      wrapperMaterial cố định 24x24px với position: 'absolute', khiến View con có
@@ -23,6 +23,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 import TodayScreen from '../screens/TodayScreen';
 import {
   fontSize,
@@ -44,7 +45,7 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
-  Today: 'Hôm nay',
+  Today: 'Mục tiêu',
   Schedule: 'Lịch tập',
   Run: 'Chạy bộ',
   Stats: 'Thống kê',
@@ -69,17 +70,31 @@ const TabSvgIcon = memo(function TabSvgIcon({
 
   switch (routeName) {
     case 'Today':
-      // Icon Ngôi nhà (Hôm nay)
+      // Icon mục tiêu
       return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+          <Circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.16 : 0}
+          />
+          <Circle
+            cx="12"
+            cy="12"
+            r="5"
+            stroke={color}
+            strokeWidth={strokeWidth}
+          />
           <Path
-            d="M3 10.5L12 3L21 10.5V20C21 20.5523 20.5523 21 20 21H15V15C15 14.4477 14.5523 14 14 14H10C9.44772 14 9 14.4477 9 15V21H4C3.44772 21 3 20.5523 3 20V10.5Z"
+            d="M12 12L19 5M15.5 5H19V8.5"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill={focused ? color : 'none'}
-            fillOpacity={focused ? 0.16 : 0}
           />
         </Svg>
       );
@@ -294,21 +309,6 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
   );
 }
 
-function ScheduleScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Lịch tập</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Lịch tập luyện trong tuần
-      </Text>
-    </SafeAreaView>
-  );
-}
-
 function StatsScreen() {
   const { colors } = useTheme();
   return (
@@ -336,7 +336,7 @@ export default function MainTabs() {
       <Tab.Screen
         name="Today"
         component={TodayScreen}
-        options={{ tabBarLabel: 'Hôm nay' }}
+        options={{ tabBarLabel: 'Mục tiêu' }}
       />
       <Tab.Screen
         name="Schedule"

@@ -20,6 +20,7 @@
     "expo-keep-awake": "~58.0.3",
     "expo-linear-gradient": "~58.0.3",
     "expo-location": "~58.0.20",
+    "expo-network": "~58.0.4",
     "expo-notifications": "~58.1.8",
     "expo-secure-store": "~58.0.2",
     "expo-sensors": "~58.0.4",
@@ -52,6 +53,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "api": "npm --prefix fitlog-server start",
+    "api:raw": "json-server --watch fitlog-server/db.json --host 0.0.0.0 --port 3000",
     "server": "npm --prefix fitlog-server start",
     "server:reset": "npm --prefix fitlog-server run reset",
     "android": "expo start --android",

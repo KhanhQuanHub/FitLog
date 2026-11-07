@@ -9,9 +9,24 @@
 // CẢNH BÁO: bản HỌC TẬP / DEMO. App thật phải băm mật khẩu (bcrypt), dùng HTTPS.
 // ================================================================
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { validateRunPayload } = require('./validate');
+
+function getLocalIpv4Addresses() {
+    const interfaces = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(interfaces)) {
+        for (const iface of interfaces[name] || []) {
+            const family = typeof iface.family === 'string' ? iface.family : `IPv${iface.family}`;
+            if (family === 'IPv4' && !iface.internal && iface.address && !iface.address.startsWith('169.254.')) {
+                ips.push(iface.address);
+            }
+        }
+    }
+    return ips;
+}
 
 // ---------- CẤU HÌNH ----------
 // Khóa bí mật ký token. Đổi thành chuỗi riêng, hoặc đặt biến môi trường FIGLOG_SECRET.
@@ -136,6 +151,15 @@ module.exports = (req, res, next) => {
 
     if (req.method === 'OPTIONS') return next(); // preflight CORS
 
+    // ----- 0. NHẬN DIỆN MÁY CHỦ TRONG MẠNG LAN (KHÔNG CẦN TOKEN) -----
+    if (req.method === 'GET' && req.path === '/__fitlog_ping') {
+        return res.json({
+            app: 'fitlog-server',
+            ok: true,
+            ips: getLocalIpv4Addresses(),
+        });
+    }
+
     const parts = req.path.split('/').filter(Boolean); // '/workouts/3' -> ['workouts','3']
     const resource = parts[0];
     const id = parts[1];
@@ -144,22 +168,53 @@ module.exports = (req, res, next) => {
     // ----- 1. ĐĂNG NHẬP: POST /login  body {email, password} -----
     if (method === 'POST' && req.path === '/login') {
         const { email, password } = req.body || {};
-        const user = getDbState(req).users.find((u) => u.email === email && u.password === password);
+        const cleanEmail = String(email || '').trim().toLowerCase();
+        const user = getDbState(req).users.find(
+            (u) => String(u.email || '').trim().toLowerCase() === cleanEmail && u.password === password
+        );
         if (!user) return deny(res, 401, 'Sai email hoặc mật khẩu');
         const token = signToken({ id: user.id, role: user.role, exp: Date.now() + TOKEN_TTL_MS });
         return res.json({ token, user: strip(user) });
     }
 
+    const authHeader = req.headers.authorization || '';
+    const payload = verifyToken(authHeader.replace('Bearer ', ''));
+
+    // ----- 1b. ĐĂNG NHẬP QUA GET /users?email=...&password=... & KIỂM TRA TRÌNH DUYỆT GET /users -----
+    if (!authHeader && method === 'GET' && resource === 'users' && !id && parts.length === 1) {
+        if (typeof req.query.email === 'string' && typeof req.query.password === 'string') {
+            const cleanEmail = req.query.email.trim().toLowerCase();
+            const matched = getDbState(req).users.find(
+                (u) =>
+                    String(u.email || '').trim().toLowerCase() === cleanEmail &&
+                    u.password === req.query.password
+            );
+            if (!matched) {
+                return res.json([]);
+            }
+            const token = signToken({
+                id: matched.id,
+                role: matched.role,
+                exp: Date.now() + TOKEN_TTL_MS,
+            });
+            return res.json([{ ...strip(matched), token }]);
+        }
+        // Mở http://<IP_LAPTOP>:3000/users trên trình duyệt để chẩn đoán kết nối LAN
+        // (res.jsonp ở trên đã tự động gọi strip() xóa toàn bộ trường password)
+        return next();
+    }
+
     // ----- 2. ĐĂNG KÝ CÔNG KHAI: POST /users (chưa cần token) -----
-    const payload = verifyToken((req.headers.authorization || '').replace('Bearer ', ''));
     if (method === 'POST' && resource === 'users' && !id && !payload) {
         const body = req.body || {};
         if (!body.email || !body.password) return deny(res, 400, 'Thiếu email hoặc mật khẩu');
         if (getDbState(req).users.some((u) => u.email === body.email)) return deny(res, 409, 'Email đã tồn tại');
+        const displayName = body.fullName || body.name || '';
         req.body = {
+            name: displayName,
             email: body.email,
             password: body.password,
-            fullName: body.fullName || '',
+            fullName: displayName,
             role: 'user', // ÉP vai trò user, không cho tự đăng ký admin
             createdAt: new Date().toISOString(),
         };

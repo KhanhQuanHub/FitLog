@@ -45,7 +45,6 @@ function loadSqliteModule() {
   if (!isReactNative) return null;
   // Nạp trễ để các script kiểm thử Node (figlog-server/test-acceptance.js) vẫn import được
   // services/runRepository.js mà không cần module native.
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require('expo-sqlite');
 }
 

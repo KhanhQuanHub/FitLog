@@ -52,7 +52,7 @@ export default function RunSummaryScreen({
   const { colors } = useTheme();
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [appliedStrideM, setAppliedStrideM] = useState(null);
-  const [localSqlRoute, setLocalSqlRoute] = useState([]);
+  const [sqlRouteState, setSqlRouteState] = useState({ clientId: null, coords: [] });
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const record = run || route?.params?.run || null;
@@ -66,14 +66,14 @@ export default function RunSummaryScreen({
   // Dự phòng: nếu bản ghi chưa gắn routeCoords trên bộ nhớ, đọc từ SQLite theo clientId
   useEffect(() => {
     let active = true;
-    setLocalSqlRoute([]);
-    if (!record?.clientId || propRouteCoords.length >= 2) {
+    const targetClientId = record?.clientId;
+    if (!targetClientId || propRouteCoords.length >= 2) {
       return undefined;
     }
-    getRunRoute(record.clientId)
+    getRunRoute(targetClientId)
       .then((coords) => {
         if (active && Array.isArray(coords) && coords.length >= 2) {
-          setLocalSqlRoute(coords);
+          setSqlRouteState({ clientId: targetClientId, coords });
         }
       })
       .catch(() => {});
@@ -82,6 +82,10 @@ export default function RunSummaryScreen({
     };
   }, [propRouteCoords.length, record?.clientId]);
 
+  const localSqlRoute =
+    sqlRouteState.clientId && sqlRouteState.clientId === record?.clientId
+      ? sqlRouteState.coords
+      : [];
   const resolvedRouteCoords = propRouteCoords.length >= 2 ? propRouteCoords : localSqlRoute;
   const resolvedGpsDistanceM = useMemo(() => {
     const explicit = Number(record?.gpsDistanceM);

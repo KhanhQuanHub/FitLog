@@ -230,6 +230,7 @@ export default function RunScreen() {
 
   // Trạng thái hiển thị bản đồ lộ trình GPS
   const [showMap, setShowMap] = useState(true);
+  const [mapInitialCoords, setMapInitialCoords] = useState([]);
 
   // Modal đăng nhập lại khi gặp lỗi 401
   const [reloginVisible, setReloginVisible] = useState(false);
@@ -270,6 +271,7 @@ export default function RunScreen() {
     routeCoordsRef.current = [];
     lastSavedPointRef.current = null;
     lastDraftSavedMsRef.current = 0;
+    setMapInitialCoords([]);
     mapRef.current?.resetRoute();
   }, []);
 
@@ -286,6 +288,7 @@ export default function RunScreen() {
       if (draft && draft.routeCoords.length > 0) {
         routeCoordsRef.current = draft.routeCoords;
         lastSavedPointRef.current = draft.routeCoords[draft.routeCoords.length - 1];
+        setMapInitialCoords(draft.routeCoords);
         mapRef.current?.setRoute(draft.routeCoords);
       } else {
         clearRecordedRoute();
@@ -632,13 +635,19 @@ export default function RunScreen() {
               ref={mapRef}
               isTracking={isRunning}
               gpsStatus={gpsStatus}
-              initialCoordinates={routeCoordsRef.current}
+              initialCoordinates={mapInitialCoords}
               height={220}
             />
           </View>
         ) : (
           <View style={styles.collapsedMapBar}>
-            <Pressable style={styles.showMapBtn} onPress={() => setShowMap(true)}>
+            <Pressable
+              style={styles.showMapBtn}
+              onPress={() => {
+                setMapInitialCoords([...routeCoordsRef.current]);
+                setShowMap(true);
+              }}
+            >
               <Ionicons name="map-outline" size={18} color={colors.primary} />
               <Text style={styles.showMapBtnText}>Hiện bản đồ lộ trình GPS</Text>
               <Ionicons name="chevron-down-outline" size={18} color={colors.textMuted} />

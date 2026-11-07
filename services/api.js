@@ -11,9 +11,16 @@
 // ============================================================================
 
 import * as SecureStore from 'expo-secure-store';
-import { API_TIMEOUT_MS, BASE_URL, getBaseUrl, getBaseUrlAsync } from './config';
+import {
+  API_TIMEOUT_MS,
+  BASE_URL,
+  discoverServerUrl,
+  getBaseUrl,
+  getBaseUrlAsync,
+  invalidateDiscoveredServerUrl,
+} from './config';
 
-export { BASE_URL, getBaseUrl, getBaseUrlAsync };
+export { BASE_URL, discoverServerUrl, getBaseUrl, getBaseUrlAsync };
 
 const TOKEN_STORAGE_KEY = 'figlog_auth_token';
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -214,30 +221,53 @@ export async function clearAuthToken() {
  * @returns {Promise<any>}
  */
 export async function request(path, options = {}) {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, options.timeoutMs || API_TIMEOUT_MS);
+  const isPublicAuthRequest =
+    options.skipAuth === true ||
+    path === '/login' ||
+    (path === '/users' && options.method === 'POST');
+
+  const token = isPublicAuthRequest ? null : await getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  // Dò tìm địa chỉ máy chủ trước khi bắt đầu đếm ngược timeout của request
+  let currentBaseUrl = await getBaseUrlAsync();
+
+  const executeFetchOnce = async (baseUrl) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => {
+      controller.abort();
+    }, options.timeoutMs || API_TIMEOUT_MS);
+
+    try {
+      return await fetch(`${baseUrl}${path}`, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  };
 
   try {
-    const isPublicAuthRequest =
-      options.skipAuth === true ||
-      path === '/login' ||
-      (path === '/users' && options.method === 'POST');
-
-    const token = isPublicAuthRequest ? null : await getAuthToken();
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    };
-
-    const currentBaseUrl = await getBaseUrlAsync();
-    const response = await fetch(`${currentBaseUrl}${path}`, {
-      ...options,
-      headers,
-      signal: controller.signal,
-    });
+    let response;
+    try {
+      response = await executeFetchOnce(currentBaseUrl);
+    } catch (firstNetworkErr) {
+      // Nếu rớt mạng do vừa đổi sang Wi-Fi / Hotspot khác -> tự động dò lại IP máy chủ 1 lần
+      invalidateDiscoveredServerUrl();
+      const refreshedBaseUrl = await discoverServerUrl({ forceRefresh: true });
+      if (refreshedBaseUrl && refreshedBaseUrl !== currentBaseUrl) {
+        currentBaseUrl = refreshedBaseUrl;
+        response = await executeFetchOnce(currentBaseUrl);
+      } else {
+        throw firstNetworkErr;
+      }
+    }
 
     let payload = null;
     const text = await response.text();
@@ -299,28 +329,72 @@ export async function request(path, options = {}) {
       err && typeof err === 'object' && 'name' in err ? /** @type {any} */ (err).name : '';
     if (errName === 'AbortError') {
       throw new ApiError(
-        'Hết thời gian chờ phản hồi từ máy chủ (quá 10 giây).',
+        `Hết thời gian chờ phản hồi từ máy chủ (${currentBaseUrl}, quá 10 giây). Kiểm tra lại IP laptop hoặc Firewall.`,
         408,
         null,
         'TIMEOUT'
       );
     }
     throw new ApiError(
-      'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng Wi-Fi/4G và thử lại.',
+      `Không thể kết nối máy chủ (${currentBaseUrl}). Hãy kiểm tra hai máy chung Wi-Fi, đã chạy json-server và mở Firewall cổng 3000.`,
       0,
       null,
       'NETWORK'
     );
-  } finally {
-    clearTimeout(timeoutId);
   }
 }
 
 /**
- * Đăng nhập thật qua POST /login:
- * - Gửi: { email: string (đã cắt khoảng trắng & chữ thường), password: string }
- * - Nhận: { token: string, user: { id, email, fullName, role } }
- * - Lưu token vào expo-secure-store.
+ * Tạo token giả định dạng <base64url>.demo khi chạy json-server thuần (không qua auth.js)
+ * để `decodeTokenPayload()` và `verifyStoredSession()` hoạt động đồng nhất.
+ *
+ * @param {Record<string, any>} user
+ * @returns {string}
+ */
+function buildFallbackDemoToken(user) {
+  const payloadJson = JSON.stringify({
+    id: user?.id ?? 1,
+    role: user?.role || 'user',
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  });
+
+  const globalBuffer = /** @type {any} */ (globalThis).Buffer;
+  if (typeof globalBuffer !== 'undefined' && typeof globalBuffer.from === 'function') {
+    return `${globalBuffer.from(payloadJson, 'utf8').toString('base64url')}.demo`;
+  }
+
+  const utf8Bytes = encodeURIComponent(payloadJson).replace(
+    /%([0-9A-F]{2})/g,
+    (_m, hex) => String.fromCharCode(parseInt(hex, 16))
+  );
+
+  if (typeof globalThis.btoa === 'function') {
+    const b64 = globalThis.btoa(utf8Bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `${b64}.demo`;
+  }
+
+  let out = '';
+  for (let i = 0; i < utf8Bytes.length; i += 3) {
+    const c1 = utf8Bytes.charCodeAt(i);
+    const has2 = i + 1 < utf8Bytes.length;
+    const has3 = i + 2 < utf8Bytes.length;
+    const c2 = has2 ? utf8Bytes.charCodeAt(i + 1) : 0;
+    const c3 = has3 ? utf8Bytes.charCodeAt(i + 2) : 0;
+
+    out += BASE64_CHARS.charAt(c1 >> 2);
+    out += BASE64_CHARS.charAt(((c1 & 3) << 4) | (c2 >> 4));
+    if (has2) out += BASE64_CHARS.charAt(((c2 & 15) << 2) | (c3 >> 6));
+    if (has3) out += BASE64_CHARS.charAt(c3 & 63);
+  }
+  return `${out.replace(/\+/g, '-').replace(/\//g, '_')}.demo`;
+}
+
+/**
+ * Đăng nhập qua json-server:
+ * - Gọi `GET {BASE_URL}/users?email=...&password=...` (timeout 10s bằng AbortController).
+ * - Nếu mảng trả về có phần tử: lấy thông tin user + token (token thật từ auth.js hoặc
+ *   token giả định dạng chuẩn khi chạy json-server thuần), lưu vào expo-secure-store.
+ * - Nếu mảng rỗng: báo lỗi "Email hoặc mật khẩu không đúng" bằng tiếng Việt.
  *
  * @param {string} email
  * @param {string} password
@@ -328,16 +402,32 @@ export async function request(path, options = {}) {
  */
 export async function login(email, password) {
   const cleanEmail = String(email || '').trim().toLowerCase();
-  const result = await request('/login', {
-    method: 'POST',
-    body: JSON.stringify({ email: cleanEmail, password }),
+  const queryPath = `/users?email=${encodeURIComponent(cleanEmail)}&password=${encodeURIComponent(
+    String(password || '')
+  )}`;
+
+  const matchedList = await request(queryPath, {
+    method: 'GET',
+    skipAuth: true,
   });
 
-  if (result && result.token) {
-    await setAuthToken(result.token);
-    return result.user ? { ...result.user } : result;
+  if (!Array.isArray(matchedList) || matchedList.length === 0) {
+    throw new ApiError('Email hoặc mật khẩu không đúng', 401, null, 'AUTH');
   }
-  return null;
+
+  const rawUser = matchedList[0];
+  const token =
+    typeof rawUser?.token === 'string' && rawUser.token.trim() !== ''
+      ? rawUser.token
+      : buildFallbackDemoToken(rawUser);
+
+  await setAuthToken(token);
+
+  const { password: _removedPassword, token: _removedToken, ...safeUser } = rawUser || {};
+  return {
+    ...safeUser,
+    fullName: safeUser.fullName || safeUser.name || 'Người dùng FitLog',
+  };
 }
 
 /**

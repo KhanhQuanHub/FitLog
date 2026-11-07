@@ -9,7 +9,7 @@
 // - Đồng bộ Sáng / Tối với hệ thống màu tối giản; chữ >= 14sp, vùng chạm >= 44px.
 // ============================================================================
 
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -20,9 +20,12 @@ import {
   radius,
   spacing,
 } from '../../constants/theme';
+import RunMapView from '../../components/run/RunMapView';
+import { getRunRoute } from '../../services/runRouteStore';
 import { useTheme } from '../../store/themeStore';
 import { formatPaceSec } from '../../utils/runMath';
 import { formatDistance, formatDuration, formatInt } from '../../utils/format';
+import { normalizeRouteCoords, routeDistanceM } from '../../utils/geo';
 
 // Dòng split từng km bọc React.memo
 const SplitRowItem = memo(function SplitRowItem({ km, sec, textColor, mutedColor, borderColor }) {
@@ -37,6 +40,9 @@ const SplitRowItem = memo(function SplitRowItem({ km, sec, textColor, mutedColor
 export default function RunSummaryScreen({
   run,
   syncStatus = 'saved',
+  strideSuggestion = null,
+  onApplyStrideSuggestion,
+  onDismissStrideSuggestion,
   onSyncNow,
   onOpenHistory,
   onDone,
@@ -45,10 +51,55 @@ export default function RunSummaryScreen({
 }) {
   const { colors } = useTheme();
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [appliedStrideM, setAppliedStrideM] = useState(null);
+  const [sqlRouteState, setSqlRouteState] = useState({ clientId: null, coords: [] });
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   const record = run || route?.params?.run || null;
   const effectiveStatus = record?._queued ? 'queued' : syncStatus;
+
+  const propRouteCoords = useMemo(
+    () => normalizeRouteCoords(record?.routeCoords),
+    [record?.routeCoords]
+  );
+
+  // Dự phòng: nếu bản ghi chưa gắn routeCoords trên bộ nhớ, đọc từ SQLite theo clientId
+  useEffect(() => {
+    let active = true;
+    const targetClientId = record?.clientId;
+    if (!targetClientId || propRouteCoords.length >= 2) {
+      return undefined;
+    }
+    getRunRoute(targetClientId)
+      .then((coords) => {
+        if (active && Array.isArray(coords) && coords.length >= 2) {
+          setSqlRouteState({ clientId: targetClientId, coords });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [propRouteCoords.length, record?.clientId]);
+
+  const localSqlRoute =
+    sqlRouteState.clientId && sqlRouteState.clientId === record?.clientId
+      ? sqlRouteState.coords
+      : [];
+  const resolvedRouteCoords = propRouteCoords.length >= 2 ? propRouteCoords : localSqlRoute;
+  const resolvedGpsDistanceM = useMemo(() => {
+    const explicit = Number(record?.gpsDistanceM);
+    if (Number.isFinite(explicit) && explicit > 0) return Math.round(explicit);
+    return Math.round(routeDistanceM(resolvedRouteCoords));
+  }, [record?.gpsDistanceM, resolvedRouteCoords]);
+
+  const handleApplySuggestionPress = async () => {
+    if (typeof onApplyStrideSuggestion !== 'function') return;
+    const res = await onApplyStrideSuggestion();
+    if (res?.valid && res?.strideM) {
+      setAppliedStrideM(res.strideM);
+    }
+  };
 
   const handleBackOrDone = () => {
     if (typeof onDone === 'function') {
@@ -100,6 +151,61 @@ export default function RunSummaryScreen({
             </Pressable>
           </View>
         ) : null}
+
+        {/* ================= GỢI Ý HIỆU CHUẨN SẢI CHÂN TỪ GPS ================= */}
+        {appliedStrideM ? (
+          <View style={styles.strideSavedBanner}>
+            <Ionicons name="checkmark-circle" size={20} color={colors.primary} />
+            <Text style={styles.strideSavedText}>
+              Đã cập nhật sải chân thành {appliedStrideM} m cho các buổi chạy sau.
+            </Text>
+          </View>
+        ) : strideSuggestion?.shouldSuggest ? (
+          <View style={styles.strideSuggestCard}>
+            <View style={styles.strideSuggestHeader}>
+              <Ionicons name="footsteps-outline" size={20} color={colors.primary} />
+              <Text style={styles.strideSuggestTitle}>
+                Sải chân ước tính của bạn là {strideSuggestion.estimatedStrideM} m, bạn có muốn
+                cập nhật không?
+              </Text>
+            </View>
+            <Text style={styles.strideSuggestSub}>
+              Đo từ {formatInt(Math.round(strideSuggestion.gpsDistanceM))} m GPS /{' '}
+              {formatInt(strideSuggestion.steps)} bước (hiện tại: {strideSuggestion.currentStrideM}{' '}
+              m)
+            </Text>
+            <View style={styles.strideSuggestActions}>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.strideDismissBtn}
+                onPress={onDismissStrideSuggestion}
+              >
+                <Text style={styles.strideDismissText}>Bỏ qua</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.strideApplyBtn}
+                onPress={handleApplySuggestionPress}
+              >
+                <Text style={styles.strideApplyText}>Áp dụng</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : null}
+
+        {/* ================= BẢN ĐỒ LỘ TRÌNH CHỈ ĐỌC ================= */}
+        <View style={styles.mapBlock}>
+          <View style={styles.mapBlockHeader}>
+            <View style={styles.mapHeaderLeft}>
+              <Ionicons name="map-outline" size={17} color={colors.primary} />
+              <Text style={styles.mapBlockTitle}>Lộ trình buổi chạy</Text>
+            </View>
+            {resolvedGpsDistanceM > 0 ? (
+              <Text style={styles.mapBlockMeta}>GPS: {formatInt(resolvedGpsDistanceM)} m</Text>
+            ) : null}
+          </View>
+          <RunMapView readOnly routeCoords={resolvedRouteCoords} height={220} />
+        </View>
 
         {/* ================= THẺ KẾT QUẢ CHÍNH ================= */}
         <View style={styles.heroCard}>
@@ -328,6 +434,102 @@ const createStyles = (colors) =>
       fontSize: fontSize.caption,
       fontWeight: fontWeight.bold,
       color: '#FFFFFF',
+    },
+    strideSuggestCard: {
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: radius.lg,
+      padding: spacing.md,
+      gap: spacing.sm,
+    },
+    strideSuggestHeader: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: spacing.sm,
+    },
+    strideSuggestTitle: {
+      flex: 1,
+      fontSize: fontSize.body,
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+    },
+    strideSuggestSub: {
+      fontSize: fontSize.caption,
+      color: colors.textSecondary,
+    },
+    strideSuggestActions: {
+      flexDirection: 'row',
+      justifyContent: 'flex-end',
+      gap: spacing.sm,
+      marginTop: 2,
+    },
+    strideDismissBtn: {
+      minHeight: layout.minTouchSize,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    strideDismissText: {
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.semibold,
+      color: colors.textSecondary,
+    },
+    strideApplyBtn: {
+      minHeight: layout.minTouchSize,
+      paddingHorizontal: spacing.lg,
+      borderRadius: radius.md,
+      backgroundColor: colors.primary,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    strideApplyText: {
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.bold,
+      color: colors.textOnPrimary,
+    },
+    strideSavedBanner: {
+      minHeight: 46,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primaryLight,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing.md,
+      paddingVertical: spacing.xs,
+    },
+    strideSavedText: {
+      flex: 1,
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.semibold,
+      color: colors.primary,
+    },
+    mapBlock: {
+      gap: spacing.xs,
+    },
+    mapBlockHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 2,
+    },
+    mapHeaderLeft: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.xs,
+    },
+    mapBlockTitle: {
+      fontSize: fontSize.caption,
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+    },
+    mapBlockMeta: {
+      fontSize: fontSize.caption,
+      color: colors.textMuted,
+      fontVariant: ['tabular-nums'],
     },
     heroCard: {
       backgroundColor: colors.surface,

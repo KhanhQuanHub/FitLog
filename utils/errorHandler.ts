@@ -134,7 +134,10 @@ export function normalizeError(
     /network|fetch|kết nối|offline/i.test(rawMessage)
   ) {
     return {
-      message: 'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng Wi-Fi/4G và thử lại.',
+      message:
+        anyErr?.name === 'ApiError' && rawMessage
+          ? rawMessage
+          : 'Không thể kết nối máy chủ. Vui lòng kiểm tra Wi-Fi và đảm bảo json-server đang chạy trên laptop.',
       retryable: true,
       status: 0,
     };

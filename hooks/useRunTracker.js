@@ -8,11 +8,16 @@
 // - Tính cadence theo cửa sổ trượt 30 s trên mảng vòng kích thước cố định (32 phần tử).
 // - Tự động lưu checkpoint mỗi 15 s hoặc mỗi 50 bước (< 2 KB).
 // - Giữ màn hình sáng bằng expo-keep-awake khi đang chạy và tự tắt khi dừng/tạm dừng.
+// - Theo dõi GPS (expo-location) song song khi đang chạy: lọc điểm xấu (accuracy kém,
+//   điểm "nhảy") rồi gọi callback options.onLocationUpdate({ latitude, longitude,
+//   timestamp, accuracy, isSegmentStart }). KHÔNG setState theo từng điểm GPS; quãng
+//   đường/calo vẫn tính theo Pedometer như cũ.
 // ============================================================================
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Linking } from 'react-native';
 import { Pedometer } from 'expo-sensors';
+import * as Location from 'expo-location';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 import { subscribeUnauthorized } from '../services/api';
@@ -36,11 +41,22 @@ import {
   resolveStride,
 } from '../utils/runMath';
 import { localDateString } from '../utils/dateLocal';
+import { compactCoordinate, evaluateGpsPoint, normalizeRouteCoords } from '../utils/geo';
+import {
+  GPS_DEV_SIMULATION,
+  GPS_MAX_CONSECUTIVE_JUMP_REJECTS,
+  GPS_SIGNAL_LOST_MS,
+  GPS_WATCH_DISTANCE_INTERVAL_M,
+  GPS_WATCH_TIME_INTERVAL_MS,
+} from '../constants/runRoute';
+import { useLocationStore } from '../store/locationStore';
 
 const KEEP_AWAKE_TAG = 'figlog-active-run-keep-awake';
 const CHECKPOINT_INTERVAL_MS = 15000; // Lưu checkpoint mỗi 15 giây
 const CHECKPOINT_STEP_DELTA = 50;     // Hoặc mỗi khi tăng thêm 50 bước
 const MAX_SPLITS_COUNT = 50;          // Giới hạn mảng splits cố định để tránh phình RAM
+// Toạ độ mặc định (IUH) cho chế độ giả lập GPS khi chưa có vị trí thật
+const SIMULATION_ORIGIN = { latitude: 10.822363, longitude: 106.687487 };
 
 const INITIAL_METRICS = {
   steps: 0,
@@ -62,8 +78,12 @@ const INITIAL_METRICS = {
  * Hook quản lý toàn bộ nghiệp vụ chạy bộ bằng Pedometer.
  *
  * @param {object} [userProfile] Thông tin hồ sơ người dùng { heightCm, height, weightKg, weight, gender, calibratedStrideM, id }
+ * @param {object} [options]
+ * @param {(point: { latitude: number, longitude: number, timestamp: number, accuracy: number | null, isSegmentStart: boolean }) => void} [options.onLocationUpdate]
+ *   Gọi mỗi khi có vị trí GPS mới HỢP LỆ trong lúc chạy (đã lọc accuracy & điểm nhảy).
+ *   isSegmentStart = true cho điểm đầu tiên sau khi bắt đầu / tiếp tục (không nối quãng đường qua lúc tạm dừng).
  */
-export function useRunTracker(userProfile = {}) {
+export function useRunTracker(userProfile = {}, options = {}) {
   const weightKg = Number(userProfile?.weightKg ?? userProfile?.weight ?? 60) || 60;
   const heightCm = Number(userProfile?.heightCm ?? userProfile?.height ?? 175) || 175;
   const gender = userProfile?.gender || 'male';
@@ -104,6 +124,9 @@ export function useRunTracker(userProfile = {}) {
   const [authExpired, setAuthExpired] = useState(false);
   // Thông báo lỗi/trạng thái gần nhất
   const [statusMessage, setStatusMessage] = useState('');
+  // Trạng thái GPS (chỉ đổi khi chuyển trạng thái, không theo từng điểm):
+  // 'idle' | 'searching' | 'ok' | 'lost' | 'denied' | 'disabled' | 'error' | 'simulated'
+  const [gpsStatus, setGpsStatus] = useState('idle');
 
   // ==================== CÁC REF NỘI BỘ (KHÔNG GÂY RE-RENDER) ====================
   // Khóa đảm bảo chỉ chạy 1 buổi duy nhất cùng lúc
@@ -140,6 +163,29 @@ export function useRunTracker(userProfile = {}) {
   // Bộ đếm phục vụ nghiệm thu mục #7 (chứng minh không setState theo từng bước chân)
   const sensorEventCountRef = useRef(0);
   const uiTickCountRef = useRef(0);
+
+  // ==================== GPS (KHÔNG GÂY RE-RENDER THEO TỪNG ĐIỂM) ====================
+  const onLocationUpdateRef = useRef(options?.onLocationUpdate || options?.onPoint);
+  const locationSubRef = useRef(null);
+  const gpsSimIntervalRef = useRef(null);
+  // Tăng mỗi lần gắn/gỡ listener để huỷ các lời gọi async đã lỗi thời (tạm dừng khi đang xin quyền)
+  const gpsSessionRef = useRef(0);
+  const lastGpsPointRef = useRef(null);
+  const gpsJumpRejectStreakRef = useRef(0);
+  const gpsSegmentStartRef = useRef(true);
+  const lastGpsFixMsRef = useRef(0);
+  const gpsStatusRef = useRef('idle');
+
+  useEffect(() => {
+    onLocationUpdateRef.current = options?.onLocationUpdate || options?.onPoint;
+  }, [options?.onLocationUpdate, options?.onPoint]);
+
+  // Chỉ setState khi trạng thái GPS thực sự thay đổi
+  const updateGpsStatus = useCallback((next) => {
+    if (gpsStatusRef.current === next) return;
+    gpsStatusRef.current = next;
+    setGpsStatus(next);
+  }, []);
 
   // Tính sải chân hiện hành
   const currentStrideInfo = resolveStride({
@@ -221,6 +267,20 @@ export function useRunTracker(userProfile = {}) {
       clearInterval(intervalIdRef.current);
       intervalIdRef.current = null;
     }
+    // Gỡ theo dõi GPS (và vô hiệu các lời gọi watchPositionAsync đang chờ)
+    gpsSessionRef.current += 1;
+    if (locationSubRef.current) {
+      try {
+        locationSubRef.current.remove();
+      } catch {
+        // Bỏ qua lỗi khi hủy listener GPS
+      }
+      locationSubRef.current = null;
+    }
+    if (gpsSimIntervalRef.current) {
+      clearInterval(gpsSimIntervalRef.current);
+      gpsSimIntervalRef.current = null;
+    }
     deactivateKeepAwake(KEEP_AWAKE_TAG).catch(() => {});
   }, []);
 
@@ -299,6 +359,141 @@ export function useRunTracker(userProfile = {}) {
     }
   }, [persistCurrentCheckpoint, recordCadenceSample]);
 
+  // Xử lý một vị trí GPS thô: lọc điểm xấu rồi gọi callback (CHỈ ghi ref, KHÔNG setState theo điểm)
+  const handleRawLocation = useCallback(
+    (raw) => {
+      const candidate = {
+        latitude: Number(raw?.latitude),
+        longitude: Number(raw?.longitude),
+        timestamp: Number(raw?.timestamp) || Date.now(),
+        accuracy:
+          raw?.accuracy === null || raw?.accuracy === undefined ? null : Number(raw.accuracy),
+      };
+
+      const verdict = evaluateGpsPoint(lastGpsPointRef.current, candidate);
+      if (!verdict.ok) {
+        if (verdict.reason === 'speed') {
+          // Nếu bị loại liên tiếp nhiều lần, rất có thể điểm gốc trước đó mới là điểm sai -> đặt lại mốc
+          gpsJumpRejectStreakRef.current += 1;
+          if (gpsJumpRejectStreakRef.current < GPS_MAX_CONSECUTIVE_JUMP_REJECTS) return;
+        } else {
+          return;
+        }
+      }
+      gpsJumpRejectStreakRef.current = 0;
+      lastGpsPointRef.current = candidate;
+      lastGpsFixMsRef.current = Date.now();
+      if (gpsStatusRef.current !== 'simulated') {
+        updateGpsStatus('ok');
+      }
+
+      const isSegmentStart = gpsSegmentStartRef.current;
+      gpsSegmentStartRef.current = false;
+
+      const cb = onLocationUpdateRef.current;
+      if (typeof cb === 'function') {
+        try {
+          cb({ ...candidate, isSegmentStart });
+        } catch {
+          // Lỗi ở phía màn hình không được làm hỏng buổi chạy
+        }
+      }
+    },
+    [updateGpsStatus]
+  );
+
+  // Giả lập GPS cho máy ảo (chỉ bật khi GPS_DEV_SIMULATION = true và đang ở __DEV__)
+  const startGpsSimulation = useCallback(() => {
+    const origin = lastGpsPointRef.current || useLocationStore.getState().coords || SIMULATION_ORIGIN;
+    let current = { latitude: origin.latitude, longitude: origin.longitude };
+    let step = 0;
+    updateGpsStatus('simulated');
+    gpsSimIntervalRef.current = setInterval(() => {
+      step += 1;
+      const angle = (step * 8 * Math.PI) / 180;
+      // ~6–7 m mỗi 2 giây (≈ 3 m/s, tốc độ chạy bộ)
+      current = {
+        latitude: current.latitude + 0.00005 * Math.sin(angle) + 0.00002,
+        longitude: current.longitude + 0.00005 * Math.cos(angle) + 0.00001,
+      };
+      handleRawLocation({ ...current, timestamp: Date.now(), accuracy: 5 });
+    }, GPS_WATCH_TIME_INTERVAL_MS);
+  }, [handleRawLocation, updateGpsStatus]);
+
+  /**
+   * Gắn theo dõi GPS khi bắt đầu/tiếp tục chạy. Không chặn buổi chạy nếu GPS lỗi:
+   * quãng đường vẫn tính theo Pedometer, chỉ là không có lộ trình.
+   */
+  const attachLocationListener = useCallback(async () => {
+    const session = gpsSessionRef.current;
+    const isStale = () => session !== gpsSessionRef.current;
+
+    if (GPS_DEV_SIMULATION && typeof __DEV__ !== 'undefined' && __DEV__) {
+      startGpsSimulation();
+      return;
+    }
+
+    updateGpsStatus('searching');
+    try {
+      const servicesOn = await Location.hasServicesEnabledAsync();
+      if (isStale()) return;
+      if (!servicesOn) {
+        updateGpsStatus('disabled');
+        return;
+      }
+
+      let perm = await Location.getForegroundPermissionsAsync();
+      if (!perm.granted && perm.canAskAgain !== false) {
+        perm = await Location.requestForegroundPermissionsAsync();
+      }
+      if (isStale()) return;
+      if (!perm.granted) {
+        updateGpsStatus('denied');
+        return;
+      }
+
+      const sub = await Location.watchPositionAsync(
+        {
+          accuracy: Location.Accuracy.High,
+          timeInterval: GPS_WATCH_TIME_INTERVAL_MS,
+          distanceInterval: GPS_WATCH_DISTANCE_INTERVAL_M,
+        },
+        (loc) => {
+          handleRawLocation({
+            latitude: loc?.coords?.latitude,
+            longitude: loc?.coords?.longitude,
+            accuracy: loc?.coords?.accuracy,
+            timestamp: loc?.timestamp,
+          });
+        },
+        () => {
+          // Lỗi từ hệ thống định vị (ví dụ tắt GPS giữa chừng) -> báo mất tín hiệu
+          updateGpsStatus('lost');
+        }
+      );
+
+      if (isStale()) {
+        // Đã tạm dừng/dừng trong lúc đang đăng ký -> gỡ ngay để không rò rỉ pin
+        sub.remove();
+        return;
+      }
+      locationSubRef.current = sub;
+      lastGpsFixMsRef.current = Date.now();
+    } catch {
+      if (!isStale()) updateGpsStatus('error');
+    }
+  }, [handleRawLocation, startGpsSimulation, updateGpsStatus]);
+
+  // Đặt lại bộ lọc GPS cho một chặng mới (bắt đầu hoặc tiếp tục sau tạm dừng)
+  const resetGpsSegment = useCallback((fullReset) => {
+    lastGpsPointRef.current = fullReset ? null : lastGpsPointRef.current;
+    // Sau tạm dừng, người dùng có thể đã di chuyển xa -> không so tốc độ với điểm cũ
+    if (!fullReset) lastGpsPointRef.current = null;
+    gpsJumpRejectStreakRef.current = 0;
+    gpsSegmentStartRef.current = true;
+    lastGpsFixMsRef.current = Date.now();
+  }, []);
+
   // Hàm cập nhật giao diện mỗi 1000 ms duy nhất khi đang chạy
   const startUiTickInterval = useCallback(() => {
     if (intervalIdRef.current) {
@@ -346,6 +541,15 @@ export function useRunTracker(userProfile = {}) {
         persistCurrentCheckpoint(nowMs).catch(() => {});
       }
 
+      // Phát hiện mất tín hiệu GPS nếu quá lâu không có điểm hợp lệ mới
+      if (
+        (gpsStatusRef.current === 'ok' || gpsStatusRef.current === 'searching') &&
+        lastGpsFixMsRef.current > 0 &&
+        nowMs - lastGpsFixMsRef.current >= GPS_SIGNAL_LOST_MS
+      ) {
+        updateGpsStatus('lost');
+      }
+
       uiTickCountRef.current += 1;
 
       setMetrics({
@@ -355,7 +559,7 @@ export function useRunTracker(userProfile = {}) {
         cadenceSpm: displayCadence,
       });
     }, 1000);
-  }, [currentStrideInfo.strideM, currentStrideInfo.strideSource, persistCurrentCheckpoint, weightKg]);
+  }, [currentStrideInfo.strideM, currentStrideInfo.strideSource, persistCurrentCheckpoint, updateGpsStatus, weightKg]);
 
   // ==================== CÁC HÀNH ĐỘNG CỦA MÁY TRẠNG THÁI ====================
 
@@ -479,18 +683,22 @@ export function useRunTracker(userProfile = {}) {
     });
 
     await activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
+    resetGpsSegment(true);
     attachPedometerListener();
+    attachLocationListener().catch(() => {});
     startUiTickInterval();
     await persistCurrentCheckpoint(nowMs);
     setStatus('running');
     return true;
   }, [
+    attachLocationListener,
     attachPedometerListener,
     currentStrideInfo.strideM,
     currentStrideInfo.strideSource,
     persistCurrentCheckpoint,
     prepareSensor,
     recordCadenceSample,
+    resetGpsSegment,
     sensorStatus.available,
     sensorStatus.permissionGranted,
     startUiTickInterval,
@@ -537,19 +745,34 @@ export function useRunTracker(userProfile = {}) {
     recordCadenceSample(nowMs, totalStepsRef.current);
 
     await activateKeepAwakeAsync(KEEP_AWAKE_TAG).catch(() => {});
+    resetGpsSegment(false);
     attachPedometerListener();
+    attachLocationListener().catch(() => {});
     startUiTickInterval();
     setStatus('running');
-  }, [attachPedometerListener, recordCadenceSample, startUiTickInterval, status]);
+  }, [attachLocationListener, attachPedometerListener, recordCadenceSample, resetGpsSegment, startUiTickInterval, status]);
 
   /**
    * Bước 5: Dừng hẳn và lưu buổi chạy ('running' | 'paused' -> 'finishing' -> 'saved' | 'queued').
+   *
+   * @param {string | { note?: string, routeCoords?: Array<{latitude:number, longitude:number}>, gpsDistanceM?: number }} [noteOrOptions='']
+   * @param {{ routeCoords?: Array<{latitude:number, longitude:number}>, gpsDistanceM?: number }} [extraOptions]
    */
   const stopRun = useCallback(
-    async (note = '') => {
+    async (noteOrOptions = '', extraOptions = {}) => {
       if (status !== 'running' && status !== 'paused') {
         return null;
       }
+
+      const isObj = noteOrOptions && typeof noteOrOptions === 'object';
+      const note = isObj ? noteOrOptions.note || '' : noteOrOptions;
+      const routePayload = isObj ? noteOrOptions : extraOptions || {};
+      const cleanedRoute = normalizeRouteCoords(routePayload.routeCoords).map((pt) =>
+        compactCoordinate(pt)
+      );
+      const gpsDistanceM = Number.isFinite(Number(routePayload.gpsDistanceM))
+        ? Math.round(Number(routePayload.gpsDistanceM))
+        : 0;
 
       const nowMs = Date.now();
       if (status === 'running' && segmentStartMsRef.current > 0) {
@@ -562,6 +785,7 @@ export function useRunTracker(userProfile = {}) {
       }
 
       cleanupHardwareAndTimer();
+      updateGpsStatus('idle');
 
       // Server yêu cầu durationSec từ 10 đến 21600 giây
       const rawDurationSec = Math.floor(accumulatedActiveMsRef.current / 1000);
@@ -601,6 +825,8 @@ export function useRunTracker(userProfile = {}) {
             : finalComputed.paceSecPerKm
               ? [{ km: 1, sec: finalComputed.paceSecPerKm }]
               : [],
+        routeCoords: cleanedRoute,
+        gpsDistanceM,
         note: typeof note === 'string' ? note.trim() : '',
       };
 
@@ -645,6 +871,7 @@ export function useRunTracker(userProfile = {}) {
       currentStrideInfo.strideSource,
       refreshQueueCount,
       status,
+      updateGpsStatus,
       weightKg,
     ]
   );
@@ -654,19 +881,21 @@ export function useRunTracker(userProfile = {}) {
    */
   const cancelRun = useCallback(async () => {
     cleanupHardwareAndTimer();
+    updateGpsStatus('idle');
     activeRunLockRef.current = false;
     clientIdRef.current = null;
     await clearCheckpoint();
     setCompletedRun(null);
     setStatusMessage('');
     setStatus('idle');
-  }, [cleanupHardwareAndTimer]);
+  }, [cleanupHardwareAndTimer, updateGpsStatus]);
 
   /**
    * Đặt lại về trạng thái 'idle' sau khi xem xong màn hình tóm tắt.
    */
   const resetToIdle = useCallback(() => {
     activeRunLockRef.current = false;
+    updateGpsStatus('idle');
     setCompletedRun(null);
     setStatusMessage('');
     setMetrics({
@@ -676,7 +905,7 @@ export function useRunTracker(userProfile = {}) {
       weightKg,
     });
     setStatus('idle');
-  }, [currentStrideInfo.strideM, currentStrideInfo.strideSource, weightKg]);
+  }, [currentStrideInfo.strideM, currentStrideInfo.strideSource, updateGpsStatus, weightKg]);
 
   // ==================== KHÔI PHỤC TỪ CHECKPOINT KHI MỞ LẠI APP ====================
 
@@ -792,6 +1021,8 @@ export function useRunTracker(userProfile = {}) {
         weightKg: computed.weightKg,
         calories: computed.calories,
         splits: computed.paceSecPerKm ? [{ km: 1, sec: computed.paceSecPerKm }] : [],
+        routeCoords: [],
+        gpsDistanceM: 0,
         note: typeof note === 'string' ? note.trim() : 'Nhập tay buổi chạy',
       };
 
@@ -875,9 +1106,12 @@ export function useRunTracker(userProfile = {}) {
     []
   );
 
+  const getActiveClientId = useCallback(() => clientIdRef.current, []);
+
   return {
     status,
     sensorStatus,
+    gpsStatus,
     metrics,
     completedRun,
     recoverableCheckpoint,
@@ -886,6 +1120,7 @@ export function useRunTracker(userProfile = {}) {
     setAuthExpired,
     statusMessage,
     calibratedStrideM,
+    getActiveClientId,
     prepareSensor,
     startRun,
     pauseRun,

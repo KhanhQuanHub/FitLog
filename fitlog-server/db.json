@@ -296,6 +296,79 @@
         }
       },
       "id": 4
+    },
+    {
+      "userId": 4,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 23,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Tăng cơ + Sức bền",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 23,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "endurance",
+              "muscle"
+            ],
+            "focus": [
+              "lower"
+            ],
+            "activity": [
+              "physical"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "unknown"
+            ],
+            "equipment": [
+              "mat",
+              "wall"
+            ],
+            "intensity": [
+              "gradual"
+            ],
+            "barriers": [
+              "space"
+            ]
+          }
+        }
+      },
+      "id": 5
     }
   ],
   "weightHistory": [

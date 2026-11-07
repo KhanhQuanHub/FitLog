@@ -7,14 +7,13 @@
 // ============================================================================
 
 import { useEffect } from 'react';
-import { ActivityIndicator, AppState, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import MainTabs from './MainTabs';
-import { discoverServerUrl, revalidateServerInBackground } from '../services/config';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
 import { useLocationStore } from '../store/locationStore';
@@ -40,16 +39,7 @@ export default function RootNavigator() {
   const { setup } = useTraining();
 
   useEffect(() => {
-    // Dò tìm sẵn IP máy chủ trong mạng LAN ngay khi mở ứng dụng (chạy nền)
-    discoverServerUrl().catch(() => {});
     restoreSession();
-
-    const sub = AppState.addEventListener('change', (nextState) => {
-      if (nextState === 'active') {
-        revalidateServerInBackground().catch(() => {});
-      }
-    });
-    return () => sub.remove();
   }, [restoreSession]);
 
   // Sau khi đăng nhập (hoặc khôi phục phiên) thành công: bật theo dõi vị trí toàn app,

@@ -11,16 +11,9 @@
 // ============================================================================
 
 import * as SecureStore from 'expo-secure-store';
-import {
-  API_TIMEOUT_MS,
-  BASE_URL,
-  discoverServerUrl,
-  getBaseUrl,
-  getBaseUrlAsync,
-  invalidateDiscoveredServerUrl,
-} from './config';
+import { API_TIMEOUT_MS, BASE_URL, getBaseUrl, getBaseUrlAsync } from './config';
 
-export { BASE_URL, discoverServerUrl, getBaseUrl, getBaseUrlAsync };
+export { BASE_URL, getBaseUrl, getBaseUrlAsync };
 
 const TOKEN_STORAGE_KEY = 'figlog_auth_token';
 const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
@@ -233,41 +226,18 @@ export async function request(path, options = {}) {
     ...(options.headers || {}),
   };
 
-  // Dò tìm địa chỉ máy chủ trước khi bắt đầu đếm ngược timeout của request
-  let currentBaseUrl = await getBaseUrlAsync();
-
-  const executeFetchOnce = async (baseUrl) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => {
-      controller.abort();
-    }, options.timeoutMs || API_TIMEOUT_MS);
-
-    try {
-      return await fetch(`${baseUrl}${path}`, {
-        ...options,
-        headers,
-        signal: controller.signal,
-      });
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
+  const currentBaseUrl = await getBaseUrlAsync();
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, options.timeoutMs || API_TIMEOUT_MS);
 
   try {
-    let response;
-    try {
-      response = await executeFetchOnce(currentBaseUrl);
-    } catch (firstNetworkErr) {
-      // Nếu rớt mạng do vừa đổi sang Wi-Fi / Hotspot khác -> tự động dò lại IP máy chủ 1 lần
-      invalidateDiscoveredServerUrl();
-      const refreshedBaseUrl = await discoverServerUrl({ forceRefresh: true });
-      if (refreshedBaseUrl && refreshedBaseUrl !== currentBaseUrl) {
-        currentBaseUrl = refreshedBaseUrl;
-        response = await executeFetchOnce(currentBaseUrl);
-      } else {
-        throw firstNetworkErr;
-      }
-    }
+    const response = await fetch(`${currentBaseUrl}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
 
     let payload = null;
     const text = await response.text();
@@ -341,6 +311,8 @@ export async function request(path, options = {}) {
       null,
       'NETWORK'
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

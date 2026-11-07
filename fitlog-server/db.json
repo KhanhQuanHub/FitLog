@@ -735,6 +735,18 @@
       "note": "",
       "userId": 1,
       "id": 13
+    },
+    {
+      "exerciseId": 1,
+      "date": "2026-11-07",
+      "time": "22:26",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 7,
+      "id": 14
     }
   ],
   "runs": [

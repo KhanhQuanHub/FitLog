@@ -2,7 +2,8 @@
   "users": [
     {
       "id": 1,
-      "email": "quan@figlog.vn",
+      "name": "Nguyễn Khánh Quân",
+      "email": "quan@fitlog.vn",
       "password": "123456",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
@@ -10,6 +11,7 @@
     },
     {
       "id": 2,
+      "name": "Thanh Hà",
       "email": "ha@figlog.vn",
       "password": "123456",
       "fullName": "Thanh Hà",
@@ -18,6 +20,7 @@
     },
     {
       "id": 3,
+      "name": "Quản trị viên",
       "email": "admin@figlog.vn",
       "password": "admin123",
       "fullName": "Quản trị viên",
@@ -47,6 +50,14 @@
       "role": "user",
       "createdAt": "2026-10-29T00:15:54.837Z",
       "id": 6
+    },
+    {
+      "email": "quan1@gmail.com",
+      "password": "@KQuan12",
+      "fullName": "Nguyễn Khánh Quân",
+      "role": "user",
+      "createdAt": "2026-11-07T09:03:54.443Z",
+      "id": 7
     }
   ],
   "profiles": [
@@ -58,9 +69,75 @@
       "weightKg": 60,
       "bmi": 19.6,
       "bmiGroup": "normal",
-      "healthCondition": "none",
-      "sessionsPerWeek": 4,
-      "calibratedStrideM": null
+      "healthCondition": "Không có",
+      "sessionsPerWeek": 3,
+      "calibratedStrideM": null,
+      "age": 22,
+      "currentGoal": "Sức khỏe",
+      "trainingSetup": {
+        "version": 2,
+        "height": 175,
+        "weight": 60,
+        "age": 22,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "health"
+            ],
+            "focus": [
+              "balanced"
+            ],
+            "activity": [
+              "sitting"
+            ],
+            "styles": [
+              "gentle",
+              "mobility",
+              "walking"
+            ],
+            "places": [
+              "home"
+            ],
+            "equipment": [
+              "bodyweight"
+            ],
+            "intensity": [
+              "light",
+              "gradual"
+            ],
+            "barriers": [
+              "time",
+              "motivation",
+              "technique",
+              "space"
+            ]
+          }
+        }
+      }
     },
     {
       "id": 2,
@@ -73,6 +150,225 @@
       "healthCondition": "joint",
       "sessionsPerWeek": 3,
       "calibratedStrideM": null
+    },
+    {
+      "userId": 7,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 25,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Sức khỏe + Tăng cơ",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 25,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "muscle",
+              "health"
+            ],
+            "focus": [
+              "upper"
+            ],
+            "activity": [
+              "physical"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "chair"
+            ],
+            "intensity": [
+              "challenge"
+            ],
+            "barriers": [
+              "motivation"
+            ]
+          }
+        }
+      },
+      "id": 3
+    },
+    {
+      "userId": 5,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 64,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Tăng cơ + Sức bền",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 64,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "endurance",
+              "muscle"
+            ],
+            "focus": [
+              "lower",
+              "upper"
+            ],
+            "activity": [
+              "physical",
+              "walking"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "wall"
+            ],
+            "intensity": [
+              "challenge"
+            ],
+            "barriers": [
+              "technique"
+            ]
+          }
+        }
+      },
+      "id": 4
+    },
+    {
+      "userId": 4,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 23,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Tăng cơ + Sức bền",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 23,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "endurance",
+              "muscle"
+            ],
+            "focus": [
+              "lower"
+            ],
+            "activity": [
+              "physical"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "unknown"
+            ],
+            "equipment": [
+              "mat",
+              "wall"
+            ],
+            "intensity": [
+              "gradual"
+            ],
+            "barriers": [
+              "space"
+            ]
+          }
+        }
+      },
+      "id": 5
     }
   ],
   "weightHistory": [
@@ -172,97 +468,143 @@
       "id": 1,
       "name": "Hít đất (Push-up)",
       "muscleGroup": "Ngực, tay sau",
+      "primaryMuscleGroup": "Ngực",
+      "secondaryMuscleGroups": [
+        "Tay sau",
+        "Vai"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "none",
       "met": 4.5,
       "impact": "low",
       "sets": 3,
       "reps": 12,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=ejW14LnBDOg"
     },
     {
       "id": 2,
       "name": "Squat tự trọng",
       "muscleGroup": "Chân, mông",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông",
+        "Core"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "none",
       "met": 5,
       "impact": "low",
       "sets": 3,
       "reps": 15,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=lSv_J53UTR0"
     },
     {
       "id": 3,
       "name": "Jumping Jacks",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
       "equipment": "none",
       "met": 8,
       "impact": "high",
       "sets": 3,
       "reps": 0,
       "durationSec": 60,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=0QsXpN0ZzUw"
     },
     {
       "id": 4,
       "name": "Plank",
       "muscleGroup": "Bụng, core",
+      "primaryMuscleGroup": "Bụng",
+      "secondaryMuscleGroups": [
+        "Vai",
+        "Lưng"
+      ],
+      "activityType": "Tập sức mạnh",
       "equipment": "mat",
       "met": 4,
       "impact": "low",
       "sets": 3,
       "reps": 0,
       "durationSec": 45,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=euVFnEry8YY"
     },
     {
       "id": 5,
       "name": "Yoga chào mặt trời",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Lưng",
+        "Chân"
+      ],
+      "activityType": "Yoga / Kéo giãn",
       "equipment": "mat",
       "met": 3,
       "impact": "low",
       "sets": 1,
       "reps": 10,
       "durationSec": 0,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=-HFrSiz4qgI"
     },
     {
       "id": 6,
       "name": "Nhảy dây",
       "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
       "equipment": "rope",
       "met": 10,
       "impact": "high",
       "sets": 4,
       "reps": 0,
       "durationSec": 120,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=jTHDTxf7Yh4"
     },
     {
       "id": 7,
       "name": "Đạp xe tĩnh",
       "muscleGroup": "Chân",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông"
+      ],
+      "activityType": "Cardio",
       "equipment": "machine",
       "met": 5,
       "impact": "low",
       "sets": 1,
       "reps": 0,
       "durationSec": 1200,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=qXR2YTO40bE"
     },
     {
       "id": 8,
       "name": "Chạy bộ tốc độ vừa (8km/h)",
       "muscleGroup": "Cardio",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân"
+      ],
+      "activityType": "Cardio",
       "equipment": "none",
       "met": 8,
       "impact": "high",
       "sets": 1,
       "reps": 0,
       "durationSec": 1800,
-      "youtubeId": "YOUTUBE_VIDEO_ID"
+      "youtubeId": "https://www.youtube.com/watch?v=0-5--O_N_-s"
     }
   ],
   "workouts": [
@@ -331,6 +673,68 @@
       "durationMin": 0,
       "caloriesBurned": 0,
       "note": ""
+    },
+    {
+      "exerciseId": 4,
+      "date": "2026-11-01",
+      "time": "21:00",
+      "status": "done",
+      "durationMin": 30,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 120,
+      "note": "",
+      "userId": 1,
+      "id": 9,
+      "weightKg": 60
+    },
+    {
+      "exerciseId": 5,
+      "date": "2026-11-01",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 300,
+      "caloriesBurned": 0,
+      "note": "ghi chú đây",
+      "userId": 1,
+      "id": 10
+    },
+    {
+      "exerciseId": 6,
+      "date": "2026-11-01",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 12,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 11
+    },
+    {
+      "exerciseId": 3,
+      "date": "2026-11-06",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 12,
+      "weightKg": 60
+    },
+    {
+      "exerciseId": 3,
+      "date": "2026-11-07",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 13
     }
   ],
   "runs": [

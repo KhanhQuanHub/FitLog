@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "erd",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\candidate.json",
+    "sha256": "8936801859dc39e7b4bde218a65d90b61ca5398012fc4234f54832db327edf06",
+    "bytes": 11287
+  },
+  "artifact": {
+    "path": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\fitlog-database.html",
+    "sha256": "23d8855f08098df8084dae5bf0a9845bab2b8924290be7d3d29fd4dc0adae8ab",
+    "bytes": 884168
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\fitlog-database.finalize.json",
+    "summaryReceipt": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\fitlog-database.finalize-summary.json",
+    "browserCheckReceipt": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\fitlog-database.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T13:48:37.782Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3425,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

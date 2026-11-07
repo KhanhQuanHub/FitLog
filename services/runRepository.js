@@ -23,12 +23,16 @@ import {
   saveRun,
   updateProfileCalibratedStride,
 } from './api';
+import { getRunRoutesByClientIds, saveRunRoute } from './runRouteStore';
+import { normalizeRouteCoords } from '../utils/geo';
 
 export const STORAGE_KEYS = {
   CHECKPOINT: '@figlog/run_checkpoint_v1',
   QUEUE: '@figlog/run_queue_v1',
   HISTORY_CACHE: '@figlog/run_history_cache_v1',
   CALIBRATION: '@figlog/run_calibration_v1',
+  // Nháp lộ trình GPS của buổi chạy đang diễn ra (tách riêng khỏi checkpoint < 2 KB)
+  ROUTE_DRAFT: '@figlog/run_route_draft_v1',
 };
 
 export const MAX_CHECKPOINT_BYTES = 2048; // Giới hạn < 2 KB cho mỗi lần ghi checkpoint
@@ -164,6 +168,102 @@ export async function clearCheckpoint() {
   } catch {
     // Bỏ qua nếu không tồn tại
   }
+  // Nháp lộ trình gắn liền vòng đời checkpoint: lưu xong / hủy / bỏ qua đều xóa
+  await clearRouteDraft();
+}
+
+// ==================== 1b. NHÁP LỘ TRÌNH GPS (KHI APP BỊ ĐÓNG GIỮA CHỪNG) ====================
+
+/**
+ * Ghi nháp lộ trình của buổi chạy đang diễn ra (gọi định kỳ ~30 s hoặc khi app vào nền,
+ * KHÔNG gọi theo từng điểm GPS). Tối đa ~200 điểm (~9 KB).
+ *
+ * @param {string} clientId
+ * @param {Array<{latitude:number, longitude:number}>} routeCoords
+ * @param {number} gpsDistanceM
+ * @returns {Promise<boolean>}
+ */
+export async function saveRouteDraft(clientId, routeCoords, gpsDistanceM = 0) {
+  if (!clientId) return false;
+  try {
+    await storageAdapter.setItem(
+      STORAGE_KEYS.ROUTE_DRAFT,
+      JSON.stringify({
+        clientId,
+        routeCoords: normalizeRouteCoords(routeCoords),
+        gpsDistanceM: Math.round(Number(gpsDistanceM) || 0),
+        savedAtMs: Date.now(),
+      })
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Đọc nháp lộ trình khớp với clientId của checkpoint đang khôi phục.
+ *
+ * @param {string} clientId
+ * @returns {Promise<{ routeCoords: Array<{latitude:number, longitude:number}>, gpsDistanceM: number } | null>}
+ */
+export async function loadRouteDraft(clientId) {
+  if (!clientId) return null;
+  try {
+    const raw = await storageAdapter.getItem(STORAGE_KEYS.ROUTE_DRAFT);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.clientId !== clientId) return null;
+    return {
+      routeCoords: normalizeRouteCoords(parsed.routeCoords),
+      gpsDistanceM: Number(parsed.gpsDistanceM) || 0,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function clearRouteDraft() {
+  try {
+    await storageAdapter.removeItem(STORAGE_KEYS.ROUTE_DRAFT);
+  } catch {
+    // Bỏ qua nếu không tồn tại
+  }
+}
+
+/**
+ * Chuẩn hóa một bản ghi buổi chạy đọc từ hàng đợi / cache / server:
+ * routeCoords luôn là mảng (bản ghi cũ không có trường này -> []).
+ *
+ * @param {object} run
+ * @returns {object}
+ */
+export function normalizeRunRecord(run) {
+  if (!run || typeof run !== 'object') return run;
+  return { ...run, routeCoords: normalizeRouteCoords(run.routeCoords) };
+}
+
+/**
+ * Bổ sung lộ trình từ SQLite cục bộ cho các bản ghi không có routeCoords
+ * (ví dụ server/cache cũ không trả về) — 1 truy vấn cho cả trang.
+ *
+ * @param {Array<object>} items
+ * @returns {Promise<Array<object>>}
+ */
+async function attachLocalRoutes(items) {
+  const normalized = items.map(normalizeRunRecord);
+  const missingIds = normalized
+    .filter((r) => r && r.clientId && r.routeCoords.length < 2)
+    .map((r) => r.clientId);
+  if (missingIds.length === 0) return normalized;
+
+  const localRoutes = await getRunRoutesByClientIds(missingIds);
+  if (localRoutes.size === 0) return normalized;
+  return normalized.map((r) =>
+    r && r.clientId && r.routeCoords.length < 2 && localRoutes.has(String(r.clientId))
+      ? { ...r, routeCoords: localRoutes.get(String(r.clientId)) }
+      : r
+  );
 }
 
 // ==================== 2. HÀNG ĐỢI ĐỒNG BỘ OFFLINE (QUEUE) ====================
@@ -327,6 +427,12 @@ export async function finishAndSaveRun(runRecord, options = {}) {
 
   // Bước 1: Lưu vào hàng đợi cục bộ trước và xóa checkpoint
   await enqueueRun(runRecord);
+  // Bước 1b: Ghi lộ trình GPS xuống SQLite MỘT lần (offline, không phụ thuộc server).
+  // Lỗi SQLite không chặn việc lưu buổi chạy (routeCoords vẫn nằm trong bản ghi/hàng đợi).
+  const routeCoords = normalizeRouteCoords(runRecord?.routeCoords);
+  if (routeCoords.length >= 2) {
+    await saveRunRoute(runRecord.clientId, routeCoords, runRecord.gpsDistanceM);
+  }
   await clearCheckpoint();
 
   let attempts = 0;
@@ -338,9 +444,15 @@ export async function finishAndSaveRun(runRecord, options = {}) {
       const savedOnServer = await apiAdapter.saveRun(runRecord);
       await removeQueuedRun(runRecord.clientId);
       await prependToHistoryCache(savedOnServer);
+      // Nếu server không trả lại routeCoords thì giữ lộ trình cục bộ để màn hình tóm tắt vẽ được
+      const savedRun = normalizeRunRecord(savedOnServer);
+      if (savedRun && savedRun.routeCoords.length < 2 && routeCoords.length >= 2) {
+        savedRun.routeCoords = routeCoords;
+        savedRun.gpsDistanceM = savedRun.gpsDistanceM ?? runRecord.gpsDistanceM;
+      }
       return {
         status: 'saved',
-        run: savedOnServer,
+        run: savedRun,
         attempts,
       };
     } catch (err) {
@@ -490,7 +602,7 @@ export async function fetchRunHistoryPage(page = 1, limit = 20) {
     }
 
     return {
-      items: merged,
+      items: await attachLocalRoutes(merged),
       hasMore: validServerItems.length === safeLimit,
       fromCache: false,
       queuedCount: queue.length,
@@ -511,7 +623,7 @@ export async function fetchRunHistoryPage(page = 1, limit = 20) {
     const fallbackList = dedupeRuns(pendingItems, cached).slice(0, safeLimit);
 
     return {
-      items: fallbackList,
+      items: await attachLocalRoutes(fallbackList),
       hasMore: false,
       fromCache: true,
       queuedCount: queue.length,
@@ -582,6 +694,10 @@ export const runRepository = {
   saveCheckpoint,
   loadCheckpoint,
   clearCheckpoint,
+  saveRouteDraft,
+  loadRouteDraft,
+  clearRouteDraft,
+  normalizeRunRecord,
   getQueuedRuns,
   enqueueRun,
   removeQueuedRun,

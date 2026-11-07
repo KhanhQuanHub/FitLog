@@ -12,7 +12,6 @@
 import React, { ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   AppState,
   KeyboardAvoidingView,
   Platform,
@@ -45,10 +44,12 @@ import {
 } from '../../domain/authSchema';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../store/themeStore';
+import ForgotPasswordScreen from './ForgotPasswordScreen';
 
 export default function LoginScreen() {
   const [secureText, setSecureText] = useState(true);
   const [isAppBackgrounded, setIsAppBackgrounded] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   const passwordInputRef = useRef<ComponentRef<typeof TextInput>>(null);
   const submitLockRef = useRef(false);
@@ -66,7 +67,6 @@ export default function LoginScreen() {
   const {
     control,
     handleSubmit,
-    getValues,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: safeZodResolver<LoginFormData>(loginSchema),
@@ -128,22 +128,20 @@ export default function LoginScreen() {
     }
   }, [handleSubmit, onSubmit]);
 
-  const handleForgotPassword = useCallback(() => {
-    const currentEmail = getValues('email').trim().toLowerCase();
-    Alert.alert(
-      'Đặt lại mật khẩu',
-      currentEmail
-        ? `Hướng dẫn khôi phục mật khẩu sẽ được gửi tới ${currentEmail} nếu tài khoản tồn tại.`
-        : 'Vui lòng nhập địa chỉ email của bạn vào ô Email phía trên để nhận hướng dẫn đặt lại mật khẩu.',
-      [{ text: 'Đã hiểu', style: 'default' }]
-    );
-  }, [getValues]);
-
   const busy = isLoading || isSubmitting;
   const styles = useMemo(() => createStyles(colors), [colors]);
 
   if (isAppBackgrounded) {
     return <View style={[styles.safe, styles.privacyShield]} />;
+  }
+
+  if (showForgotPassword) {
+    return (
+      <ForgotPasswordScreen
+        navigation={{ goBack: () => setShowForgotPassword(false) } as never}
+        route={{ key: 'ForgotPassword', name: 'ForgotPassword' } as never}
+      />
+    );
   }
 
   return (
@@ -246,7 +244,7 @@ export default function LoginScreen() {
               <Pressable
                 accessibilityRole="button"
                 style={styles.forgotBtn}
-                onPress={handleForgotPassword}
+                onPress={() => setShowForgotPassword(true)}
                 disabled={busy}
               >
                 <Text style={styles.forgotText}>Quên mật khẩu?</Text>

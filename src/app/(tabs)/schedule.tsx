@@ -1,1 +1,1 @@
-export { ScheduleScreen as default } from '../../../navigation/MainTabs';
+export { default } from '../../../screens/ScheduleScreen';

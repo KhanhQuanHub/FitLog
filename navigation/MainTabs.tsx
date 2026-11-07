@@ -1,6 +1,6 @@
 // ============================================================================
 // navigation/MainTabs.tsx
-// Thanh điều hướng 5 tab dưới cùng (Hôm nay, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
+// Thanh điều hướng 5 tab dưới cùng (Mục tiêu, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
 // - Khắc phục triệt để lỗi icon bị cắt mất một nửa bên phải:
 //   1. Bỏ qua TabBarIcon mặc định của @react-navigation/bottom-tabs (vốn ép khung
 //      wrapperMaterial cố định 24x24px với position: 'absolute', khiến View con có
@@ -16,16 +16,12 @@ import React, { memo } from 'react';
 import { Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
-import { Ionicons } from '@expo/vector-icons';
 
 import {
-  fontSize,
   fontWeight,
   layout,
-  radius,
-  spacing,
 } from '../constants/theme';
 import { useTheme } from '../store/themeStore';
 
@@ -40,7 +36,7 @@ export type MainTabParamList = {
 const ROUTE_KEYS: Record<string, keyof MainTabParamList> = { index: 'Today', schedule: 'Schedule', run: 'Run', statistics: 'Stats', profile: 'Profile' };
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
-  Today: 'Hôm nay',
+  Today: 'Mục tiêu',
   Schedule: 'Lịch tập',
   Run: 'Chạy bộ',
   Stats: 'Thống kê',
@@ -65,17 +61,31 @@ const TabSvgIcon = memo(function TabSvgIcon({
 
   switch (routeName) {
     case 'Today':
-      // Icon Ngôi nhà (Hôm nay)
+      // Icon mục tiêu
       return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+          <Circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.16 : 0}
+          />
+          <Circle
+            cx="12"
+            cy="12"
+            r="5"
+            stroke={color}
+            strokeWidth={strokeWidth}
+          />
           <Path
-            d="M3 10.5L12 3L21 10.5V20C21 20.5523 20.5523 21 20 21H15V15C15 14.4477 14.5523 14 14 14H10C9.44772 14 9 14.4477 9 15V21H4C3.44772 21 3 20.5523 3 20V10.5Z"
+            d="M12 12L19 5M15.5 5H19V8.5"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill={focused ? color : 'none'}
-            fillOpacity={focused ? 0.16 : 0}
           />
         </Svg>
       );
@@ -291,57 +301,6 @@ export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab 
   );
 }
 
-export function TodayScreen() {
-  const { colors } = useTheme();
-
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Hôm nay</Text>
-
-      <View
-        style={[
-          styles.todayCard,
-          {
-            backgroundColor: colors.surface,
-            borderColor: colors.border,
-          },
-        ]}
-      >
-        <View style={[styles.iconCircle, { backgroundColor: colors.primaryLight }]}>
-          <Ionicons name="fitness-outline" size={24} color={colors.primary} />
-        </View>
-        <View style={styles.todayTextCol}>
-          <Text style={[styles.todayBannerTitle, { color: colors.text }]}>
-            Mục tiêu hôm nay: 5.0 km
-          </Text>
-          <Text style={[styles.todayBannerSub, { color: colors.textMuted }]}>
-            Chuyển sang tab Chạy bộ để bắt đầu buổi tập
-          </Text>
-        </View>
-      </View>
-    </SafeAreaView>
-  );
-}
-
-export function ScheduleScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Lịch tập</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Lịch tập luyện trong tuần
-      </Text>
-    </SafeAreaView>
-  );
-}
-
-
 export default function MainTabs() {
   return (
     <Tabs
@@ -352,7 +311,7 @@ export default function MainTabs() {
     >
       <Tabs.Screen
         name="index"
-        options={{ tabBarLabel: 'Hôm nay' }}
+        options={{ tabBarLabel: 'Mục tiêu' }}
       />
       <Tabs.Screen
         name="schedule"
@@ -403,43 +362,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     textAlign: 'center',
     includeFontPadding: false,
-  },
-  placeholderContainer: {
-    flex: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  screenTitle: {
-    fontSize: fontSize.title,
-    fontWeight: fontWeight.bold,
-  },
-  placeholderSub: {
-    fontSize: fontSize.body,
-  },
-  todayCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  todayTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  todayBannerTitle: {
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-  },
-  todayBannerSub: {
-    fontSize: fontSize.caption,
   },
 });

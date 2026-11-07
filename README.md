@@ -2,6 +2,12 @@
 
 Ứng dụng di động giúp người dùng quản lý hồ sơ sức khỏe, lập kế hoạch tập luyện, theo dõi calo tiêu hao và ghi nhận quãng đường chạy bộ. Dữ liệu lưu cục bộ trên máy (offline-first), không cần tài khoản đám mây.
 
+## Thiết lập cá nhân lần đầu
+
+Sau đăng nhập, tài khoản chưa thiết lập sẽ đi qua bốn bước: nhập chỉ số và sức khỏe → khảo sát 8 câu chọn nhiều ý → xem vùng cơ được hệ thống chọn sẵn trên hình trước/sau → xem bài gợi ý và xác nhận. Mỗi câu khảo sát cần ít nhất một ý và luôn có **Không biết / Nhờ hệ thống gợi ý**; có thể chọn mục này ở cả 8 câu để tiếp tục. Mục **Nâng cao** ở bước vùng cơ mặc định thu gọn, mở ra mới có checkbox tự chọn. Hồ sơ và câu trả lời được lưu theo tài khoản trên server; các lần đăng nhập sau vào thẳng màn Hôm nay. Để sửa, chọn **Hồ sơ → Thiết lập lại chỉ số & vùng cơ**.
+
+Xem [cách triển khai theo bài giảng và các nhánh if/else](docs/ONBOARDING.md). Phần mới không cần cài thêm thư viện.
+
 # Xuất thành file apk
 `eas build --platform android --profile preview`
 
@@ -17,7 +23,7 @@
 1. **Tài khoản & hồ sơ sức khỏe:** đăng ký/đăng nhập cục bộ, nhập chiều cao, cân nặng, tự tính BMI, khai báo bệnh nền, chọn số buổi tập mỗi tuần (2–6), lưu lịch sử cân nặng.
 2. **8 mục tiêu tập luyện:** giảm cân, tăng cân, duy trì thể trạng, tăng cơ, sức bền Cardio, dẻo dai, sức khỏe tổng thể, kiểm soát stress.
 3. **Onboarding & cây quyết định:** khảo sát 6 bước, lọc bài tập an toàn theo bệnh nền (ví dụ: bệnh khớp thì loại bài nhảy bật, bệnh tim thì giới hạn MET ≤ 5.0) và theo mục tiêu.
-4. **Lịch tập, video & tính calo:** lịch tuần/tháng, thư viện bài tập kèm video YouTube, tính calo theo công thức `MET × cân nặng (kg) × thời gian (giờ)`.
+4. **Lịch tập, video & tính calo:** lịch tuần/tháng, tạo/sửa/xóa buổi tập, ghi nhận trạng thái và ghi chú; thư viện bài tập có video nhúng YouTube khi đã điền ID video; tính calo theo công thức `MET × cân nặng (kg) × thời gian (giờ)`.
 5. **Thống kê tiến độ:** biểu đồ cột/đường theo tuần và tháng, tỷ lệ hoàn thành mục tiêu, chuỗi ngày tập liên tục (streak).
 6. **Đo quãng đường chạy bộ:** tích hợp bản đồ vẽ lộ trình di chuyển thời gian thực (như Strava/Google Maps) kết hợp cảm biến đếm bước chân quy đổi sải chân cá nhân hóa, hoạt động mượt mà trên Expo Go.
 
@@ -31,7 +37,7 @@
 | Điều hướng | `@react-navigation/native`, `native-stack`, `bottom-tabs` |
 | Biểu mẫu & Kiểm thử | `react-hook-form`, `zod`, `@hookform/resolvers` |
 | Quản lý trạng thái | `zustand` |
-| Bản đồ & Web | `react-native-webview` (Leaflet & CartoDB Maps), `expo-location` |
+| Bản đồ & Web | `react-native-webview` (Leaflet & CartoDB Maps, YouTube iframe), `react-native-youtube-iframe`, `expo-location` |
 | Giao diện & Hiệu ứng | `expo-linear-gradient`, `react-native-safe-area-context`, `@expo/vector-icons` |
 | Đồ họa & Biểu đồ | `react-native-calendars`, `react-native-gifted-charts`, `react-native-svg` |
 | Cảm biến & Thiết bị | `expo-sensors` (Pedometer), `expo-keep-awake`, `expo-font` |
@@ -66,25 +72,42 @@ FitLog/
 │   ├── auth/                     ✓ LoginScreen, RegisterScreen (kiểm tra Zod + test account)
 │   ├── onboarding/               # Wizard khảo sát 6 bước & kết quả gợi ý
 │   ├── TodayScreen.tsx           # Màn hình kế hoạch hôm nay
-│   ├── ScheduleScreen.tsx        # Lịch tập tuần/tháng
+│   ├── ScheduleScreen.tsx       ✓ Lịch tuần/tháng, trạng thái, ghi chú, calo MET
 │   ├── RunScreen.tsx             ✓ 6 trạng thái chạy bộ + bản đồ lộ trình real-time
 │   ├── StatsScreen.tsx           # Thống kê calo, quãng đường, chuỗi streak
 │   ├── ProfileScreen.tsx         ✓ Hồ sơ hiện đại: Hero Gradient, thước đo BMI, sải chân, cài đặt
-│   ├── ExerciseDetailScreen.tsx  # Chi tiết bài tập + video YouTube
 │   └── GoalsScreen.tsx           # Quản lý 8 mục tiêu thể lực
 ├── components/
 │   ├── ui/                       ✓ Button, Card, StatBox, EmptyState, ScreenHeader, Input
 │   ├── run/                      ✓ StatusBadge, ConfirmStopModal, SummaryCard, RunMapView
-│   ├── schedule/                 # WeeklyStrip, WorkoutItem
+│   ├── schedule/                 ✓ WeeklyStrip, WorkoutCard, WorkoutEditorModal, ExerciseLibraryModal
 │   └── charts/                   # BarChartWeek, LineChartTrend
 ├── constants/
 │   └── theme.ts                  ✓ Hệ thống bảng màu, khoảng cách, bo góc, bóng đổ chuẩn
 ├── utils/
 │   └── format.ts                 ✓ Định dạng thời gian, quãng đường, pace, số nguyên
-├── domain/                       ✓ bmi.ts (tính & phân loại BMI), met.ts, stride.ts...
+├── domain/                       ✓ bmi.ts, workout.ts (kiểu lịch tập, MET tham chiếu)
 ├── store/                        ✓ authStore.ts (Zustand: login, register, logout)
 └── types/                        # Workout, Exercise, RunLog, Profile...
 ```
+
+Video hướng dẫn dùng `react-native-youtube-iframe` trên iOS/Android và iframe web riêng trên trình duyệt để tránh tải nhầm native WebView shim.
+Trường `youtubeId` chấp nhận ID YouTube 11 ký tự hoặc URL đầy đủ như `https://www.youtube.com/watch?v=VIDEO_ID`, `https://youtu.be/VIDEO_ID`, `/embed/VIDEO_ID`, `/shorts/VIDEO_ID` và `/live/VIDEO_ID`.
+
+Danh sách video cần bổ sung trong `exercises`:
+
+| ID bài tập | Tên bài tập | Trường cần điền |
+| --- | --- | --- |
+| 1 | Hít đất (Push-up) | `youtubeId` |
+| 2 | Squat tự trọng | `youtubeId` |
+| 3 | Jumping Jacks | `youtubeId` |
+| 4 | Plank | `youtubeId` |
+| 5 | Yoga chào mặt trời | `youtubeId` |
+| 6 | Nhảy dây | `youtubeId` |
+| 7 | Đạp xe tĩnh | `youtubeId` |
+| 8 | Chạy bộ tốc độ vừa (8 km/h) | `youtubeId` |
+
+Điền ID hoặc link YouTube cho bài tương ứng tại `fitlog-server/db.json` để áp dụng ngay cho server đang chạy, và cập nhật cùng giá trị tại `fitlog-server/db.jsonc` để giữ lại trong dữ liệu seed. Không cần reset cơ sở dữ liệu để áp dụng thay đổi vào `db.json`.
 
 ---
 

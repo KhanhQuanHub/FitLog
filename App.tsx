@@ -16,6 +16,7 @@ import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
 import { useThemeStore } from './store/themeStore';
+import { TrainingProvider } from './store/TrainingContext';
 
 export default function App({ children }: { children: ReactNode }) {
   const isDark = useThemeStore((state) => state.isDark);
@@ -57,7 +58,9 @@ export default function App({ children }: { children: ReactNode }) {
     <SafeAreaProvider>
       <ThemeProvider value={navigationTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} animated />
-        {children}
+        <TrainingProvider>
+          {children}
+        </TrainingProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

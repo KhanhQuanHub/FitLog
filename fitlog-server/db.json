@@ -47,6 +47,14 @@
       "role": "user",
       "createdAt": "2026-10-29T00:15:54.837Z",
       "id": 6
+    },
+    {
+      "email": "sitran@gmail.com",
+      "password": "Si@14012005",
+      "fullName": "Trần Đình Sĩ",
+      "role": "user",
+      "createdAt": "2026-11-07T07:17:46.580Z",
+      "id": 7
     }
   ],
   "profiles": [
@@ -139,6 +147,74 @@
       "healthCondition": "joint",
       "sessionsPerWeek": 3,
       "calibratedStrideM": null
+    },
+    {
+      "userId": 7,
+      "heightCm": 150,
+      "weightKg": 60,
+      "age": 20,
+      "gender": "female",
+      "sessionsPerWeek": 4,
+      "healthCondition": "Xương khớp",
+      "currentGoal": "Giảm cân",
+      "trainingSetup": {
+        "version": 2,
+        "height": 150,
+        "weight": 60,
+        "age": 20,
+        "gender": "Nữ",
+        "conditions": [
+          "joint"
+        ],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 4,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "back",
+          "lowerBack",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "calves",
+          "abs"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "weightLoss"
+            ],
+            "focus": [
+              "lower"
+            ],
+            "activity": [
+              "walking"
+            ],
+            "styles": [
+              "gentle"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "wall"
+            ],
+            "intensity": [
+              "gradual"
+            ],
+            "barriers": [
+              "technique"
+            ]
+          }
+        }
+      },
+      "id": 3
     }
   ],
   "weightHistory": [
@@ -493,6 +569,18 @@
       "userId": 1,
       "id": 12,
       "weightKg": 60
+    },
+    {
+      "exerciseId": 3,
+      "date": "2026-11-07",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 1,
+      "id": 13
     }
   ],
   "runs": [

@@ -73,6 +73,76 @@
       "healthCondition": "joint",
       "sessionsPerWeek": 3,
       "calibratedStrideM": null
+    },
+    {
+      "userId": 5,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 98,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Sức bền + Dẻo dai",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 98,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "mobility",
+              "endurance"
+            ],
+            "focus": [
+              "lower"
+            ],
+            "activity": [
+              "unknown"
+            ],
+            "styles": [
+              "gentle"
+            ],
+            "places": [
+              "outdoors"
+            ],
+            "equipment": [
+              "unknown"
+            ],
+            "intensity": [
+              "unknown"
+            ],
+            "barriers": [
+              "unknown"
+            ]
+          }
+        }
+      },
+      "id": 3
     }
   ],
   "weightHistory": [
@@ -414,6 +484,18 @@
       "note": "",
       "userId": 1,
       "id": 11
+    },
+    {
+      "exerciseId": 4,
+      "date": "2026-11-07",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 5,
+      "id": 12
     }
   ],
   "runs": [

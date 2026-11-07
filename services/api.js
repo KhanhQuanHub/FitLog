@@ -459,18 +459,42 @@ export function updateProfileCalibratedStride(profileId, calibratedStrideM) {
   });
 }
 
+/**
+ * Lấy toàn bộ danh sách các buổi tập theo lịch kèm thông tin bài tập (`_expand=exercise`),
+ * sắp xếp từ ngày mới nhất đến cũ nhất để phục vụ tính toán thống kê.
+ *
+ * @returns {Promise<Array<object>>} Danh sách buổi tập từ bảng `workouts`
+ */
 export function getAllWorkouts() {
   return request('/workouts?_expand=exercise&_sort=date&_order=desc');
 }
 
+/**
+ * Lấy toàn bộ danh sách các buổi chạy bộ từ bảng `runs`, sắp xếp từ ngày mới nhất
+ * đến cũ nhất để phục vụ tính toán thống kê.
+ *
+ * @returns {Promise<Array<object>>} Danh sách buổi chạy từ bảng `runs`
+ */
 export function getAllRuns() {
   return request('/runs?_sort=date&_order=desc');
 }
 
+/**
+ * Lấy danh sách mục tiêu cá nhân kèm chi tiết tên mục tiêu (`_expand=goal`)
+ * từ bảng `userGoals` để đối chiếu tiến độ tuần.
+ *
+ * @returns {Promise<Array<object>>} Danh sách mục tiêu từ bảng `userGoals`
+ */
 export function getUserGoals() {
   return request('/userGoals?_expand=goal');
 }
 
+/**
+ * Lấy toàn bộ lịch sử cân nặng từ bảng `weightHistory`, sắp xếp tăng dần theo ngày
+ * để vẽ biểu đồ diễn biến cân nặng và tính BMI.
+ *
+ * @returns {Promise<Array<object>>} Danh sách các lần cân từ bảng `weightHistory`
+ */
 export function getWeightHistory() {
   return request('/weightHistory?_sort=date&_order=asc');
 }

@@ -46,3 +46,8 @@ yarn-error.*
 # Archify skill & generated diagrams
 .agents/skills/archify/
 .archify/
+
+# Local documentation & artifacts
+docs/
+doc/
+

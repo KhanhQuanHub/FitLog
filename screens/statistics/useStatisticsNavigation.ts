@@ -5,21 +5,18 @@
 // ============================================================================
 
 import { useCallback, useEffect, useRef } from 'react';
-import { router, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useStatisticsData } from './StatisticsDataProvider';
 
 /**
- * Quay lại màn hình trước đó trong ngăn xếp điều hướng.
- * Nếu người dùng mở trực tiếp bằng đường dẫn sâu (deep link) mà không có lịch sử
- * quay lại (`!router.canGoBack()`), điều hướng thẳng về trang tổng quan `/statistics`.
+ * Quay lại màn hình trước đó trong ngăn xếp điều hướng React Navigation.
  *
+ * @param navigation Đối tượng điều hướng React Navigation nếu được truyền vào
  * @returns {void}
  */
-export function backToStatistics(): void {
-  if (router.canGoBack()) {
-    router.back();
-  } else {
-    router.replace('/statistics');
+export function backToStatistics(navigation?: { canGoBack?: () => boolean; goBack?: () => void }): void {
+  if (navigation && typeof navigation.goBack === 'function') {
+    navigation.goBack();
   }
 }
 

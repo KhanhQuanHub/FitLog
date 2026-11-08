@@ -2,16 +2,23 @@
 // navigation/RootNavigator.tsx
 // Điều hướng gốc của FitLog:
 // - Khi mở ứng dụng: tự động kiểm tra token trong expo-secure-store (restoreSession).
-// - Nếu token còn hợp lệ: cho phép truy cập khu vực 5 tab chính ((tabs)).
-// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (login) / Đăng ký (register).
+// - Nếu token còn hợp lệ: hỏi thiết lập lần đầu, hoặc vào Hôm nay khi đã thiết lập.
+// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (LoginScreen).
 // ============================================================================
 
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import MainTabs from './MainTabs';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
 import { useLocationStore } from '../store/locationStore';
+import TrainingSetupScreen from '../screens/TrainingSetupScreen';
+import { useTraining } from '../store/TrainingContext';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -22,11 +29,14 @@ export type RootStackParamList = {
   EditTraining: undefined;
 };
 
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 export default function RootNavigator() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const isRestoring = useAuthStore((state) => state.isRestoring);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const { colors } = useTheme();
+  const { setup } = useTraining();
 
   useEffect(() => {
     restoreSession();
@@ -51,20 +61,27 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack
+    <Stack.Navigator
       screenOptions={{
         headerShown: false,
         animation: 'fade',
       }}
     >
-      <Stack.Protected guard={!isLoggedIn}>
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-      </Stack.Protected>
-      <Stack.Protected guard={isLoggedIn}>
-        <Stack.Screen name="(tabs)" />
-      </Stack.Protected>
-    </Stack>
+      {!isLoggedIn ? (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        </>
+      ) : !setup ? (
+        <Stack.Screen name="Onboarding" component={TrainingSetupScreen} />
+      ) : (
+        <>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="EditTraining" component={TrainingSetupScreen} />
+        </>
+      )}
+    </Stack.Navigator>
   );
 }
 

@@ -65,18 +65,13 @@
             "usesCleartextTraffic": true
           }
         }
-      ],
-      "expo-router"
+      ]
     ],
     "extra": {
       "eas": {
         "projectId": "5d9f8a16-0b19-4774-a821-7372230e7cf3"
       }
     },
-    "owner": "kquan11",
-    "scheme": "fitlog",
-    "experiments": {
-      "typedRoutes": true
-    }
+    "owner": "kquan11"
   }
 }

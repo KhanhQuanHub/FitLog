@@ -13,12 +13,19 @@
 // ============================================================================
 
 import React, { memo } from 'react';
-import { Tabs } from 'expo-router';
-import type { BottomTabBarProps } from 'expo-router/js-tabs';
+import {
+  BottomTabBarProps,
+  createBottomTabNavigator,
+} from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
+import RunScreen from '../screens/running/RunScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
+import TodayScreen from '../screens/TodayScreen';
+import StatisticsNavigator from './StatisticsNavigator';
 import {
   fontWeight,
   layout,
@@ -33,7 +40,7 @@ export type MainTabParamList = {
   Profile: undefined;
 };
 
-const ROUTE_KEYS: Record<string, keyof MainTabParamList> = { index: 'Today', schedule: 'Schedule', run: 'Run', statistics: 'Stats', profile: 'Profile' };
+const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
   Today: 'Mục tiêu',
@@ -144,40 +151,42 @@ const TabSvgIcon = memo(function TabSvgIcon({
           />
           <Rect
             x="6"
-            y="11"
+            y="12"
             width="3"
-            height="6"
+            height="7"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.22 : 0}
           />
           <Rect
-            x="10.5"
-            y="6"
+            x="11"
+            y="7"
             width="3"
-            height="11"
+            height="12"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.35 : 0}
           />
           <Rect
-            x="15"
-            y="9"
+            x="16"
+            y="10"
             width="3"
-            height="8"
+            height="9"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.22 : 0}
           />
         </Svg>
       );
 
     case 'Profile':
-    default:
-      // Icon Hồ sơ cá nhân
+      // Icon Hồ sơ người dùng
       return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
           <Circle
@@ -187,10 +196,10 @@ const TabSvgIcon = memo(function TabSvgIcon({
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
-            fillOpacity={focused ? 0.16 : 0}
+            fillOpacity={focused ? 0.2 : 0}
           />
           <Path
-            d="M4.5 20C5.8 16.6 8.6 15 12 15C15.4 15 18.2 16.6 19.5 20"
+            d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
@@ -201,18 +210,17 @@ const TabSvgIcon = memo(function TabSvgIcon({
 });
 
 /**
- * Thanh TabBar tùy chỉnh chuẩn Material 3 / iOS:
- * - Không bị giới hạn bởi khung 24x24px của TabBarIcon mặc định.
- * - Nền tròn nhạt (pill 56x32px) bao trọn icon 24px khi tab được chọn.
- * - Tự động cộng vùng đệm an toàn dưới đáy (useSafeAreaInsets) để không đè lên home indicator.
+ * Thanh điều hướng đáy FitLog tuỳ chỉnh (Custom TabBar):
+ * - Giữ trọn vẹn icon SVG trong vùng vẽ, triệt tiêu lỗi clipping trên Android.
+ * - Khoảng chạm rộng rãi (>= 44px) đúng chuẩn giao diện di động.
  */
-export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab }: BottomTabBarProps) {
+export function FitLogBottomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-
-  // Đảm bảo luôn có khoảng đệm tối thiểu 10px dưới nhãn tab + phần inset hệ thống
-  const safeBottomPadding = Math.max(insets.bottom, 10) + 4;
-  const tabBarHeight = 60 + safeBottomPadding;
 
   return (
     <View
@@ -221,14 +229,13 @@ export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab 
         {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: tabBarHeight,
-          paddingBottom: safeBottomPadding,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : layout.screenPadding,
         },
       ]}
     >
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-        const routeName = ROUTE_KEYS[route.name];
+        const routeName = route.name as keyof MainTabParamList;
         const label =
           typeof options.tabBarLabel === 'string'
             ? options.tabBarLabel
@@ -238,19 +245,19 @@ export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab 
         const itemColor = isFocused ? colors.primary : colors.textMuted;
 
         const onPress = () => {
-          const event = emitter.emit({
+          const event = navigation.emit({
             type: 'tabPress',
             target: route.key,
             canPreventDefault: true,
           });
 
           if (!isFocused && !event.defaultPrevented) {
-            navigateToTab(route.key);
+            navigation.navigate(route.name);
           }
         };
 
         const onLongPress = () => {
-          emitter.emit({
+          navigation.emit({
             type: 'tabLongPress',
             target: route.key,
           });
@@ -303,33 +310,39 @@ export function FitLogBottomTabBar({ state, descriptors, emitter, navigateToTab 
 
 export default function MainTabs() {
   return (
-    <Tabs
+    <Tab.Navigator
+      initialRouteName="Today"
       tabBar={(props) => <FitLogBottomTabBar {...props} />}
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Tabs.Screen
-        name="index"
+      <Tab.Screen
+        name="Today"
+        component={TodayScreen}
         options={{ tabBarLabel: 'Mục tiêu' }}
       />
-      <Tabs.Screen
-        name="schedule"
+      <Tab.Screen
+        name="Schedule"
+        component={ScheduleScreen}
         options={{ tabBarLabel: 'Lịch tập' }}
       />
-      <Tabs.Screen
-        name="run"
+      <Tab.Screen
+        name="Run"
+        component={RunScreen}
         options={{ tabBarLabel: 'Chạy bộ' }}
       />
-      <Tabs.Screen
-        name="statistics"
+      <Tab.Screen
+        name="Stats"
+        component={StatisticsNavigator}
         options={{ tabBarLabel: 'Thống kê' }}
       />
-      <Tabs.Screen
-        name="profile"
+      <Tab.Screen
+        name="Profile"
+        component={ProfileScreen}
         options={{ tabBarLabel: 'Hồ sơ' }}
       />
-    </Tabs>
+    </Tab.Navigator>
   );
 }
 

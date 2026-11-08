@@ -1,0 +1,56 @@
+(node:8140) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///D:/FitLog/services/api.js is not specified and it doesn't parse as CommonJS.
+Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+To eliminate this warning, add "type": "module" to D:\FitLog\package.json.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✖ Cam kết còn làm mới không hiển thị phần trăm chắc chắn từ giá trị cũ (507.252ms)
+✖ Mã client trùng chuỗi id của buổi khác vẫn mở đúng chi tiết buổi đã bấm (246.3118ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4690.9202
+
+✖ failing tests:
+
+test at screens\statistics\statistics-screens.test.mjs:154:1
+✖ Cam kết còn làm mới không hiển thị phần trăm chắc chắn từ giá trị cũ (507.252ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    [
+  +   '20',
+  +   '25'
+  -   null,
+  -   null
+    ]
+  
+      at TestContext.<anonymous> (file:///D:/FitLog/screens/statistics/statistics-screens.test.mjs:170:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ '20', '25' ],
+    expected: [ null, null ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at screens\statistics\statistics-screens.test.mjs:175:1
+✖ Mã client trùng chuỗi id của buổi khác vẫn mở đúng chi tiết buổi đã bấm (246.3118ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(document.querySelector('[aria-modal="true"]').textContent.includes('5km'))
+  
+      at TestContext.<anonymous> (file:///D:/FitLog/screens/statistics/statistics-screens.test.mjs:183:10)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

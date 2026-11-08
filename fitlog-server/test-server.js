@@ -13,6 +13,7 @@ const assert = require('assert');
 const jsonServer = require('json-server');
 const authMiddleware = require('./auth');
 const { isPasswordHash, migrateUsers, verifyPassword } = require('./passwords');
+const emailService = require('./email');
 
 const PORT = 3456;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -519,6 +520,91 @@ async function runAllTests() {
                 assert.ok(res1.data[i].startedAt >= res1.data[i + 1].startedAt);
             }
         });
+
+        const previousSmtpEnv = {
+            SMTP_USER: process.env.SMTP_USER,
+            SMTP_APP_PASSWORD: process.env.SMTP_APP_PASSWORD,
+        };
+        const originalSendPasswordResetEmail = emailService.sendPasswordResetEmail;
+        const sentResetEmails = [];
+        process.env.SMTP_USER = 'fitlog-test@example.com';
+        process.env.SMTP_APP_PASSWORD = 'test-app-password';
+        emailService.sendPasswordResetEmail = async (email, password) => {
+            sentResetEmails.push({ email, password });
+        };
+
+        await testCase(37, 'POST /password-reset gửi mật khẩu ngẫu nhiên và chỉ lưu bản băm', async () => {
+            const userBeforeReset = app.db.getState().users.find(
+                (user) => user.email === 'newuser@figlog.vn'
+            );
+            const previousHash = userBeforeReset.password;
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: ' NewUser@FigLog.vn ' },
+            });
+
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(res.data.message, 'Nếu email đã đăng ký, mật khẩu mới sẽ được gửi đến hộp thư của bạn.');
+            assert.strictEqual(res.data.password, undefined);
+            assert.strictEqual(sentResetEmails.length, 1);
+            assert.strictEqual(sentResetEmails[0].email, 'newuser@figlog.vn');
+            assert.match(sentResetEmails[0].password, /^[A-Za-z0-9_-]{12}$/);
+            assert.notStrictEqual(userBeforeReset.password, previousHash);
+            assert.ok(isPasswordHash(userBeforeReset.password));
+            assert.ok(verifyPassword(sentResetEmails[0].password, userBeforeReset.password));
+            assert.strictEqual(verifyPassword('new-password', userBeforeReset.password), false);
+        });
+
+        await testCase(38, 'POST /password-reset khôi phục hash cũ nếu gửi email thất bại', async () => {
+            const user = app.db.getState().users.find(
+                (item) => item.email === 'newuser@figlog.vn'
+            );
+            const previousHash = user.password;
+            emailService.sendPasswordResetEmail = async () => {
+                throw new Error('test email delivery failure');
+            };
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'newuser@figlog.vn' },
+            });
+
+            assert.strictEqual(res.status, 503);
+            assert.strictEqual(user.password, previousHash);
+        });
+        emailService.sendPasswordResetEmail = async (email, password) => {
+            sentResetEmails.push({ email, password });
+        };
+
+        await testCase(39, 'POST /password-reset không tiết lộ tài khoản email không tồn tại', async () => {
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'unknown@figlog.vn' },
+            });
+            assert.strictEqual(res.status, 200);
+            assert.strictEqual(res.data.message, 'Nếu email đã đăng ký, mật khẩu mới sẽ được gửi đến hộp thư của bạn.');
+        });
+
+        await testCase(40, 'POST /password-reset giới hạn yêu cầu quá nhiều lần theo IP', async () => {
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const res = await apiCall('/password-reset', {
+                    method: 'POST',
+                    body: { email: 'newuser@figlog.vn' },
+                });
+                assert.strictEqual(res.status, 200);
+            }
+            const limited = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'newuser@figlog.vn' },
+            });
+            assert.strictEqual(limited.status, 429);
+            assert.strictEqual(sentResetEmails.length, 3);
+        });
+
+        emailService.sendPasswordResetEmail = originalSendPasswordResetEmail;
+        for (const [key, value] of Object.entries(previousSmtpEnv)) {
+            if (value === undefined) delete process.env[key];
+            else process.env[key] = value;
+        }
     } finally {
         await new Promise((resolve) => server.close(resolve));
         fs.writeFileSync(DB_JSON, originalDatabase);

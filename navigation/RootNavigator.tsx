@@ -2,8 +2,8 @@
 // navigation/RootNavigator.tsx
 // Điều hướng gốc của FitLog:
 // - Khi mở ứng dụng: tự động kiểm tra token trong expo-secure-store (restoreSession).
-// - Nếu token còn hợp lệ: hỏi thiết lập lần đầu, hoặc vào Hôm nay khi đã thiết lập.
-// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (LoginScreen).
+// - Nếu token còn hợp lệ: cho phép truy cập khu vực 5 tab chính ((tabs)).
+// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (login) / Đăng ký (register).
 // ============================================================================
 
 import { useEffect } from 'react';

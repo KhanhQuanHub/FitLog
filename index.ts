@@ -1,2 +1,9 @@
-// Expo Router đăng ký root; các màn hình nằm trong src/app.
-import 'expo-router/entry';
+// ============================================================================
+// index.ts
+// Điểm khởi đầu ứng dụng FitLog: Đăng ký thành phần gốc App qua Expo
+// ============================================================================
+
+import { registerRootComponent } from 'expo';
+import App from './App';
+
+registerRootComponent(App);

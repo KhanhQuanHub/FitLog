@@ -1,10 +1,11 @@
 # BÁO CÁO CHỈNH SỬA & GIẢI THÍCH CHỨC NĂNG THỐNG KÊ (DỄ HIỂU CHO SINH VIÊN NĂM 1)
 
-Tài liệu này tổng hợp toàn bộ những thay đổi trên **36 file** của chức năng Thống kê trong dự án **FitLog** (hoàn chỉnh cả **4 Giai đoạn: Giai đoạn 1, Giai đoạn 2, Giai đoạn 3 và Giai đoạn 4**), giải thích rõ:
+Tài liệu này tổng hợp toàn bộ những thay đổi trên các file của chức năng Thống kê và cấu trúc điều hướng trong dự án **FitLog** (hoàn chỉnh cả **4 Giai đoạn: Giai đoạn 1, Giai đoạn 2, Giai đoạn 3, Giai đoạn 4** cùng kiến trúc điều hướng **React Navigation** đồng bộ toàn app), giải thích rõ:
 1. **Lấy dữ liệu nào từ Cơ sở dữ liệu (`db.json` & `AsyncStorage`) để thống kê?**
 2. **Luồng dữ liệu (Data Flow) đi từ CSDL lên màn hình như thế nào?**
 3. **Danh sách các React Hooks cơ bản và các biến State quan trọng được sử dụng.**
-4. **Chi tiết cả 4 giai đoạn đã chỉnh sửa trên 36 file, thay đổi từ code khó hiểu thành code tường minh ra sao.**
+4. **Chi tiết cả 4 giai đoạn đã chỉnh sửa code khó hiểu thành code tường minh ra sao.**
+5. **Kiến trúc điều hướng chuẩn React Navigation (`@react-navigation/native-stack`, `@react-navigation/bottom-tabs`) đồng nhất toàn dự án.**
 
 ---
 
@@ -59,7 +60,7 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ## 3. CÁC HOOK VÀ BIẾN QUAN TRỌNG ĐƯỢC SỬ DỤNG
 
-### 3.1. Các React Hooks và Router Hooks (Chỉ dùng các Hook cơ bản, quen thuộc)
+### 3.1. Các React Hooks và Navigation Hooks (Chỉ dùng các Hook cơ bản, quen thuộc)
 1. **`useState`**:
    * Trong `StatisticsDataProvider.tsx`:
      * `[snapshot, setSnapshot]`: Lưu toàn bộ bản chụp dữ liệu thống kê của 5 bảng (thay thế hoàn toàn `useSyncExternalStore` khó hiểu trước đây).
@@ -86,8 +87,8 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
    * Trong `StatisticsSummaryScreen.tsx` và `StatisticsDetailScreen.tsx`: Ghi nhớ kết quả của `getStatisticsPeriod(kind, anchor)` và `buildStatisticsView(snapshot, today, kind, anchor)`.
 5. **`useCallback` & `useContext`**:
    * Trong `StatisticsDataProvider.tsx`: `useCallback` tạo hàm `refresh` ổn định; `useContext(StatisticsContext)` trong `useStatisticsData()` lấy trực tiếp `{ snapshot, today, refresh }`.
-6. **`useFocusEffect` & `useLocalSearchParams`** (từ `expo-router`):
-   * Trong `useStatisticsNavigation.ts` và `src/app/(tabs)/statistics/[category].tsx`: Tự động làm mới khi mở lại màn hình và đọc tham số `category`, `kind`, `date` trên URL.
+6. **`useFocusEffect`** (từ `@react-navigation/native`):
+   * Trong `useStatisticsNavigation.ts` và `ScheduleScreen.tsx`: Tự động kích hoạt làm mới số liệu mỗi khi người dùng chuyển màn hình/tab quay trở lại giao diện (đảm bảo số liệu luôn cập nhật sau khi vừa lưu buổi tập mới).
 
 ### 3.2. Các biến cốt lõi trong tính toán & vẽ biểu đồ (`domain/statistics/statistics.ts` & `components/statistics/presentation.ts`)
 * `period` (`{ kind, start, end, keys }`): Khoảng thời gian đang xét, ví dụ tuần từ `'2026-11-02'` đến `'2026-11-08'` với 7 ngày trong mảng `keys`.
@@ -101,7 +102,7 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ---
 
-## 4. CHI TIẾT CÁC THAY ĐỔI TRÊN 36 FILE QUA CẢ 4 GIAI ĐOẠN
+## 4. CHI TIẾT CÁC THAY ĐỔI QUA CẢ 4 GIAI ĐOẠN
 
 ### Giai đoạn 1: Đơn giản hóa & chú thích tầng Kiểu dữ liệu và Tính toán (`domain/statistics/`)
 1. **`domain/statistics/types.ts`**:
@@ -125,7 +126,7 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 5. **`services/statisticsSession.js`**, **`services/statisticsData.ts`**, **`services/api.js`**, **`services/runRepository.js`**, **`screens/statistics/useStatisticsNavigation.ts`**:
    * **Thay đổi:** Bổ sung đầy đủ JSDoc tiếng Việt (`@param`, `@returns`) cho tất cả các hàm và tách các biểu thức điều kiện phức tạp thành biến trung gian rõ nghĩa (`isValidNumber`, `isValidString`, `isMatchingUser`, `loginChanged`, `userChanged`, `isAnyLoading`).
 
-### Giai đoạn 3: Làm phẳng sâu cấu trúc các Màn hình thống kê & ViewModel (`screens/statistics/` & `src/app/(tabs)/statistics/`)
+### Giai đoạn 3: Làm phẳng sâu cấu trúc các Màn hình thống kê & ViewModel (`screens/statistics/`)
 6. **`screens/statistics/viewModel.ts`**:
    * **Thay đổi lớn:**
      * Tách hàm `buildChartSeries` độc lập ở cấp module để lọc ngày tương lai và chuẩn bị các cột biểu đồ.
@@ -152,8 +153,12 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
     * **Thay đổi lớn:** Tách 3 hàm phụ độc lập ở cấp module: `buildWeeklyTargetMetric` (thay thế việc gán đè `minutes.complete = false` và `sessions.complete = false`), `getMissingGoalMessage`, `getRecentWeightLabel`, và hàm `renderActiveGoalSectionContent()`.
 13. **`screens/statistics/HabitsStatisticsScreen.tsx`**:
     * **Thay đổi lớn:** Tách 3 hàm phụ độc lập ở cấp module: `getCalendarCellStatus` (xác định nhãn và ký hiệu `●`, `–`, `·`, `?` cho từng ô lịch), `buildActivityChartPoints`, và `buildWeekdayChartPoints`.
-14. **`screens/statistics/TimeStatisticsScreen.tsx`**, **`screens/statistics/CaloriesStatisticsScreen.tsx`**, **`screens/statistics/StatisticsCategoriesScreen.tsx`**, **`screens/statistics/shared.tsx`**, **`screens/statistics/statisticsRoutes.ts`**, **`screens/statistics/index.ts`** và **4 file Route trong `src/app/(tabs)/statistics/`**:
-    * **Thay đổi:** Chuẩn bị trước mảng cấu hình thẻ chỉ số (`scheduleTimeItems`, `runningTimeItems`, `scheduleCalorieItems`, `runningCalorieItems`), tách biến `visibleRecords` và `remainingCount` trong `StatisticsHistory`, và chú thích Tiếng Việt chi tiết cho toàn bộ các hàm/component.
+14. **`navigation/StatisticsNavigator.tsx`** & **`screens/StatsScreen.tsx`**:
+    * **Thay đổi lớn:** Đóng gói toàn bộ phân hệ Thống kê thành một Native Stack Navigator (`StatisticsNavigator`), bao gồm 3 route:
+      * `StatisticsSummary`: Màn Tóm tắt số liệu tổng quan.
+      * `StatisticsCategories`: Màn danh sách 7 nhóm danh mục.
+      * `StatisticsDetail`: Màn hình chi tiết hiển thị 1 trong 7 danh mục dựa theo tham số `route.params`.
+    * Toàn bộ ngăn xếp được bọc trong một `StatisticsDataProvider` duy nhất, giúp các màn hình dùng chung bộ nhớ cache và đồng bộ làm mới dữ liệu. `screens/StatsScreen.tsx` re-export navigator này để cắm thẳng vào tab "Thống kê" của `MainTabs`.
 
 ### Giai đoạn 4: Tách nhỏ logic vẽ biểu đồ SVG và định dạng hiển thị (`components/statistics/`)
 15. **`components/statistics/presentation.ts`**:
@@ -181,3 +186,35 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
       * Tách hàm `renderArrowButton(direction)` trong `StatisticsPeriodPicker`.
       * Thay toán tử `? :` ở phần `return` của `StatisticsActivityRow` bằng câu lệnh `if (onPress) return <Pressable>...` rõ ràng.
       * Bổ sung chú thích Tiếng Việt ở đầu mọi file/hàm và các dòng xử lý cốt lõi.
+
+---
+
+## 5. KIẾN TRÚC ĐIỀU HƯỚNG REACT NAVIGATION (CHUẨN HÓA TOÀN BỘ ỨNG DỤNG)
+
+Để đảm bảo dự án chạy ổn định, đồng bộ với toàn bộ các thành viên khác trong nhóm phát triển, ứng dụng FitLog sử dụng **100% React Navigation** làm xương sống điều hướng:
+
+1. **`index.ts` (Entry point)**:
+   * Sử dụng hàm chuẩn của Expo: `registerRootComponent(App)` để khởi chạy component gốc `App`.
+2. **`App.tsx` (Root Component)**:
+   * Cung cấp ngữ cảnh toàn cục: `<SafeAreaProvider>`, `<NavigationContainer theme={navigationTheme}>` và `<TrainingProvider>`.
+   * Bên trong render trực tiếp `<RootNavigator />`. Tải trước bộ font `Ionicons` và đăng ký bộ xử lý thông báo `Notifications.setNotificationHandler`.
+3. **`navigation/RootNavigator.tsx` (Root Stack)**:
+   * Tạo bằng `createNativeStackNavigator<RootStackParamList>()`.
+   * Tự động kiểm tra token phiên làm việc (`restoreSession`).
+   * Phân quyền (Guard):
+     * Nếu chưa đăng nhập (`!isLoggedIn`): Mở cụm màn hình `Login`, `Register`, `ForgotPassword`.
+     * Nếu đã đăng nhập nhưng chưa thiết lập thông số cơ bản (`!setup`): Mở màn `Onboarding` (`TrainingSetupScreen`).
+     * Nếu đã đăng nhập và đã có thiết lập: Mở `Main` (`MainTabs`) và `EditTraining`.
+   * Tự động kích hoạt dịch vụ theo dõi vị trí GPS (`startWatching()`) khi đăng nhập và tắt (`stopWatching()`) khi đăng xuất để tiết kiệm pin.
+4. **`navigation/MainTabs.tsx` (Bottom Tabs 5 Màn hình)**:
+   * Tạo bằng `createBottomTabNavigator<MainTabParamList>()`.
+   * Gồm 5 tab chính:
+     * `Today`: Màn hình Mục tiêu trong ngày (`TodayScreen`).
+     * `Schedule`: Màn hình Lịch tập luyện (`ScheduleScreen`).
+     * `Run`: Màn hình Theo dõi chạy bộ GPS (`RunScreen`).
+     * `Stats`: Màn hình Phân hệ Thống kê (`StatisticsNavigator`).
+     * `Profile`: Màn hình Hồ sơ cá nhân (`ProfileScreen`).
+   * Thanh điều hướng tùy chỉnh `FitLogBottomTabBar` vẽ bằng SVG nguyên bản, giải quyết triệt để lỗi cắt chữ/icon trên hệ điều hành Android.
+5. **`navigation/StatisticsNavigator.tsx` (Phân hệ Thống kê)**:
+   * Tích hợp native stack trong tab `Stats`, quản lý chuyển đổi mượt mà giữa màn Tóm tắt (`StatisticsSummary`), danh mục (`StatisticsCategories`), và 7 màn chi tiết (`StatisticsDetail`).
+   * Bọc bên ngoài bằng `StatisticsDataProvider` giúp chia sẻ bộ nhớ cache và snapshot 5 nguồn dữ liệu giữa các màn hình con.

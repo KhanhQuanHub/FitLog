@@ -1,7 +1,8 @@
 // ============================================================================
 // Module: screens/StatsScreen.tsx
-// Chức năng: Điểm xuất chuyển tiếp (re-export) màn hình `StatisticsSummaryScreen`
-// để giữ tương thích với các nơi import `StatsScreen` trong dự án.
+// Chức năng: Điểm xuất chuyển tiếp (re-export) bộ điều hướng ngăn xếp Thống kê
+// (StatisticsNavigator) để hiển thị đồng nhất tại tab Thống kê của MainTabs.
 // ============================================================================
 
-export { default } from './statistics/StatisticsSummaryScreen';
+export { default } from '../navigation/StatisticsNavigator';
+export * from '../navigation/StatisticsNavigator';

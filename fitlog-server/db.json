@@ -2,8 +2,9 @@
   "users": [
     {
       "id": 1,
-      "email": "quan@figlog.vn",
-      "password": "scrypt$16384$8$1$206c23f1be91c0c1e403c83d1741c2ed$4455f07f567930bd1758db851102a00ef3fba2d8e8779ba3efa5fc5033f340251711c940efd0a05742143508e4241d48915c5a14529094bf736fab25cbc429e7",
+      "name": "Nguyễn Khánh Quân",
+      "email": "quan@fitlog.vn",
+      "password": "123456",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
       "createdAt": "2026-10-01T08:00:00.000Z"
@@ -12,7 +13,7 @@
       "id": 2,
       "name": "Thanh Hà",
       "email": "ha@figlog.vn",
-      "password": "scrypt$16384$8$1$c5c8b4b4828dbbe3cc1b5bed9ac40107$b86ca0f9be27e6e7cee2d39f38b4461e9d3d845c8c8958d7b17340178cc5296c9daeba3f73af05fed114bb442cc104cbcb76a4933e3f50d62e6744bbac4a0c36",
+      "password": "123456",
       "fullName": "Thanh Hà",
       "role": "user",
       "createdAt": "2026-10-03T09:30:00.000Z"
@@ -21,14 +22,14 @@
       "id": 3,
       "name": "Quản trị viên",
       "email": "admin@figlog.vn",
-      "password": "scrypt$16384$8$1$bc27ca1c2f04fce437ce6c70ce2aee2f$69bd023270c9fb68e9d13ee8a7846a964f87c4613039a3b861f90512253e0fd0242e64507ee7784d1084a2358408edad7edfa2481c5a7418d391c672c116a7d5",
+      "password": "admin123",
       "fullName": "Quản trị viên",
       "role": "admin",
       "createdAt": "2026-09-30T07:00:00.000Z"
     },
     {
       "email": "nguyenkhanhquan9999@gmail.com",
-      "password": "scrypt$16384$8$1$c60045a56c5cd955d871b2f49d1c64dc$5917065eb93f092ac08c711544ddb400d401fb406db61856c9229bf8bac6ad66d5f58ae29d8f9608ab9feb5dca750b59de777cd75c76dffd928be09de13a8acb",
+      "password": "@KQuan123",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T13:10:40.096Z",
@@ -36,7 +37,7 @@
     },
     {
       "email": "nguyenkhanhquan@gmail.com",
-      "password": "scrypt$16384$8$1$0b3a02f7abd6448bcfcf62fc01e2025a$bed4ec0904a6ec88bc1ccb65199872b0d8b86089e872528e53694737b5af93e6a743ab975ade9b9140ac91036ffa881022e7a7080a8694a91b96553b239ace9c",
+      "password": "@KQuan231",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T14:19:41.685Z",
@@ -44,27 +45,19 @@
     },
     {
       "email": "quan@gmail.com",
-      "password": "scrypt$16384$8$1$e70fafb619d688842aaf314ff3043f9c$a32ff2fa10dce750336ba6aef38906a1604e52eea66ba6404062aa8b062ebecf1ec6c4e61890d7ef563adac6e4e5c7c1b6b5cf18dfd1ca282f23a63237d3aa5f",
+      "password": "@KQuan231",
       "fullName": "Quân",
       "role": "user",
       "createdAt": "2026-10-29T00:15:54.837Z",
       "id": 6
     },
     {
-      "email": "sitran@gmail.com",
-      "password": "scrypt$16384$8$1$1ca87e55db2d1b3c888c649746eca4ed$546aaa5730e6dd8bc605fbb8873aecbb8591dbe98f58b4d8ecbc1a07477acab87de2ec2a18302ab3b353ffa7ee4831f68105a3ed6032bbe0be8a2d50d80184e0",
-      "fullName": "Trần Đình Sĩ",
+      "email": "quan1@gmail.com",
+      "password": "@KQuan12",
+      "fullName": "Nguyễn Khánh Quân",
       "role": "user",
       "createdAt": "2026-11-07T09:03:54.443Z",
       "id": 7
-    },
-    {
-      "email": "khoa@gmail.com",
-      "password": "scrypt$16384$8$1$4bb5279d5b95c1620aa13a42766ebefc$ae0ee1234f61df43717db24a5da651088e03d1b228cd4ce42745db82ba9f96d6cda9d4455aa3a36f52590f881be0a34ffec16aa93218ef41ac9c6860873857ca",
-      "fullName": "Võ Tiến Khoa",
-      "role": "user",
-      "createdAt": "2026-11-08T02:28:56.728Z",
-      "id": 8
     }
   ],
   "profiles": [
@@ -302,90 +295,22 @@
           }
         }
       },
-      "id": 3
-    },
-    {
-      "userId": 8,
-      "heightCm": 170,
-      "weightKg": 60,
-      "age": 21,
-      "gender": "male",
-      "sessionsPerWeek": 3,
-      "healthCondition": "Không có",
-      "currentGoal": "Tăng cơ",
-      "trainingSetup": {
-        "version": 2,
-        "height": 170,
-        "weight": 60,
-        "age": 21,
-        "gender": "Nam",
-        "conditions": [],
-        "healthNote": "",
-        "experience": "beginner",
-        "sessions": 3,
-        "minutes": 25,
-        "muscles": [
-          "chest",
-          "abs",
-          "shoulders",
-          "biceps",
-          "forearms",
-          "traps",
-          "back",
-          "lowerBack",
-          "neck",
-          "glutes",
-          "quads",
-          "hamstrings",
-          "adductors",
-          "calves"
-        ],
-        "goalAnswers": {
-          "version": 2,
-          "selections": {
-            "goals": [
-              "muscle"
-            ],
-            "focus": [
-              "unknown"
-            ],
-            "activity": [
-              "physical"
-            ],
-            "styles": [
-              "mobility"
-            ],
-            "places": [
-              "gym"
-            ],
-            "equipment": [
-              "wall"
-            ],
-            "intensity": [
-              "gradual"
-            ],
-            "barriers": [
-              "motivation"
-            ]
-          }
-        }
-      },
       "id": 4
     },
     {
       "userId": 4,
       "heightCm": 170,
       "weightKg": 60,
-      "age": 22,
+      "age": 23,
       "gender": "male",
       "sessionsPerWeek": 3,
       "healthCondition": "Không có",
-      "currentGoal": "Dẻo dai",
+      "currentGoal": "Tăng cơ + Sức bền",
       "trainingSetup": {
         "version": 2,
         "height": 170,
         "weight": 60,
-        "age": 22,
+        "age": 23,
         "gender": "Nam",
         "conditions": [],
         "healthNote": "",
@@ -399,6 +324,8 @@
           "shoulders",
           "biceps",
           "triceps",
+          "forearms",
+          "traps",
           "back",
           "lowerBack",
           "neck",
@@ -413,25 +340,27 @@
           "version": 2,
           "selections": {
             "goals": [
-              "mobility"
+              "endurance",
+              "muscle"
             ],
             "focus": [
-              "upper"
+              "lower"
             ],
             "activity": [
-              "sports"
+              "physical"
             ],
             "styles": [
-              "walking"
+              "mobility"
             ],
             "places": [
-              "gym"
+              "unknown"
             ],
             "equipment": [
-              "mat"
+              "mat",
+              "wall"
             ],
             "intensity": [
-              "unknown"
+              "gradual"
             ],
             "barriers": [
               "space"
@@ -818,18 +747,6 @@
       "note": "",
       "userId": 7,
       "id": 14
-    },
-    {
-      "exerciseId": 2,
-      "date": "2026-11-08",
-      "time": "09:36",
-      "status": "planned",
-      "durationMin": 0,
-      "plannedDurationMin": 30,
-      "caloriesBurned": 0,
-      "note": "",
-      "userId": 8,
-      "id": 15
     }
   ],
   "runs": [

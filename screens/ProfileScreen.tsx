@@ -10,6 +10,7 @@ import { useTraining } from '../store/TrainingContext';
 import { useTheme } from '../store/themeStore';
 import Button from '../components/ui/Button';
 import TrainingSetupScreen from './TrainingSetupScreen';
+import ChangePasswordScreen from './auth/ChangePasswordScreen';
 import { getWorkouts } from '../services/api';
 import { localDateString } from '../utils/dateLocal';
 import { getWorkoutRemindersEnabled, setWorkoutRemindersEnabled, syncWorkoutReminders } from '../services/workoutReminders';
@@ -23,6 +24,7 @@ export default function ProfileScreen() {
   const { setup } = useTraining();
   const { colors, themeMode, setThemeMode } = useTheme();
   const [editingSetup, setEditingSetup] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
@@ -48,6 +50,14 @@ export default function ProfileScreen() {
   }, [user?.id]);
 
   if (!user) return null;
+  if (showChangePassword) {
+    return (
+      <ChangePasswordScreen
+        navigation={{ goBack: () => setShowChangePassword(false) } as never}
+        route={{ key: 'ChangePassword', name: 'ChangePassword' } as never}
+      />
+    );
+  }
   if (!setup || editingSetup) {
     const mode = setup ? 'EditTraining' : 'Onboarding';
     return (
@@ -139,7 +149,7 @@ export default function ProfileScreen() {
           {reminderError && <Text accessibilityRole="alert" style={[styles.small, { color: colors.danger }]}>{reminderError}</Text>}
         </View>
         <Text style={[styles.small, { color: colors.textMuted }]}>Gợi ý tham khảo, không thay thế tư vấn y tế.</Text>
-        <Button title="Đổi mật khẩu" variant="secondary" icon="lock-closed-outline" onPress={() => navigation.navigate('ChangePassword')} />
+        <Button title="Đổi mật khẩu" variant="secondary" icon="lock-closed-outline" onPress={() => setShowChangePassword(true)} />
         <Button title="Đăng xuất" variant="danger" icon="log-out-outline" onPress={() => setLogoutVisible(true)} />
       </View>
     </ScrollView>

@@ -2,19 +2,12 @@
 // navigation/RootNavigator.tsx
 // Điều hướng gốc của FitLog:
 // - Khi mở ứng dụng: tự động kiểm tra token trong expo-secure-store (restoreSession).
-// - Nếu token còn hợp lệ: hỏi thiết lập lần đầu, hoặc vào Hôm nay khi đã thiết lập.
-// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (LoginScreen).
+// - Nếu token còn hợp lệ: cho phép truy cập khu vực 5 tab chính ((tabs)).
+// - Nếu chưa có token hoặc token hết hạn: hiển thị màn Đăng nhập (login) / Đăng ký (register).
 // ============================================================================
 
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-import LoginScreen from '../screens/auth/LoginScreen';
-import RegisterScreen from '../screens/auth/RegisterScreen';
-import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
-import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
-import MainTabs from './MainTabs';
 import { Stack } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
@@ -65,22 +58,6 @@ export default function RootNavigator() {
         animation: 'fade',
       }}
     >
-      {!isLoggedIn ? (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-        </>
-      ) : !setup ? (
-        <Stack.Screen name="Onboarding" component={TrainingSetupScreen} />
-      ) : (
-        <>
-          <Stack.Screen name="Main" component={MainTabs} />
-          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-          <Stack.Screen name="EditTraining" component={TrainingSetupScreen} />
-        </>
-      )}
-    </Stack.Navigator>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />

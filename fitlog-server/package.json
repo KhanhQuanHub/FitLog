@@ -4,7 +4,7 @@
     "private": true,
     "scripts": {
         "build-db": "node build-db.js",
-        "start": "json-server --watch db.json --host 0.0.0.0 --port 3000 --middlewares ./auth.js",
+        "start": "node migrate-db.js && json-server --watch db.json --host 0.0.0.0 --port 3000 --middlewares ./auth.js",
         "reset": "node build-db.js && npm start"
     },
     "devDependencies": {

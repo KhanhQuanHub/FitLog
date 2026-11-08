@@ -6,12 +6,13 @@
 //   3. Còn lại                -> bắt buộc có token (header Authorization)
 //   4. Kiểm tra quyền theo vai trò (admin / user)
 //   5. Với POST/PATCH/PUT /runs -> kiểm tra idempotent theo clientId & validate 422
-// CẢNH BÁO: bản HỌC TẬP / DEMO. App thật phải băm mật khẩu (bcrypt), dùng HTTPS.
+// Đây là server demo; production cần HTTPS và cấu hình FIGLOG_SECRET riêng.
 // ================================================================
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { validateRunPayload } = require('./validate');
+const { hashPassword, migrateUsers, verifyPassword } = require('./passwords');
 
 // ---------- CẤU HÌNH ----------
 // Khóa bí mật ký token. Đổi thành chuỗi riêng, hoặc đặt biến môi trường FIGLOG_SECRET.
@@ -25,6 +26,17 @@ const PUBLIC_READ = ['goals', 'exercises']; // ai cũng đọc được, chỉ a
 
 // ---------- HÀM PHỤ ----------
 const readDb = () => JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+
+function migrateRequestDb(req) {
+    const db = getDbState(req);
+    if (!migrateUsers(db.users)) return;
+
+    if (req.app && req.app.db && typeof req.app.db.write === 'function') {
+        req.app.db.write();
+    } else {
+        fs.writeFileSync(DB_FILE, `${JSON.stringify(db, null, 2)}\n`);
+    }
+}
 
 // Ưu tiên đọc từ bộ nhớ lowdb của json-server (req.app.db) để đảm bảo nhất quán tức thời
 // ngay cả khi 2 request gửi liên tiếp trước khi steno kịp ghi xuống đĩa.
@@ -130,6 +142,8 @@ function handleRunsValidationAndIdempotency(req, res, id, effectiveUserId) {
 
 // ---------- MIDDLEWARE CHÍNH ----------
 module.exports = (req, res, next) => {
+    migrateRequestDb(req);
+
     // Mọi dữ liệu json-server trả về đều đi qua res.jsonp -> chặn để xóa password
     const originalJsonp = res.jsonp.bind(res);
     res.jsonp = (data) => originalJsonp(strip(data));
@@ -144,7 +158,11 @@ module.exports = (req, res, next) => {
     // ----- 1. ĐĂNG NHẬP: POST /login  body {email, password} -----
     if (method === 'POST' && req.path === '/login') {
         const { email, password } = req.body || {};
-        const user = getDbState(req).users.find((u) => u.email === email && u.password === password);
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+        const user = getDbState(req).users.find(
+            (u) => String(u.email).trim().toLowerCase() === normalizedEmail
+                && verifyPassword(password, u.password)
+        );
         if (!user) return deny(res, 401, 'Sai email hoặc mật khẩu');
         const token = signToken({ id: user.id, role: user.role, exp: Date.now() + TOKEN_TTL_MS });
         return res.json({ token, user: strip(user) });
@@ -154,11 +172,17 @@ module.exports = (req, res, next) => {
     const payload = verifyToken((req.headers.authorization || '').replace('Bearer ', ''));
     if (method === 'POST' && resource === 'users' && !id && !payload) {
         const body = req.body || {};
-        if (!body.email || !body.password) return deny(res, 400, 'Thiếu email hoặc mật khẩu');
-        if (getDbState(req).users.some((u) => u.email === body.email)) return deny(res, 409, 'Email đã tồn tại');
+        if (typeof body.email !== 'string' || !body.email.trim()
+            || typeof body.password !== 'string' || !body.password) {
+            return deny(res, 400, 'Thiếu email hoặc mật khẩu');
+        }
+        const email = body.email.trim().toLowerCase();
+        if (getDbState(req).users.some((u) => String(u.email).trim().toLowerCase() === email)) {
+            return deny(res, 409, 'Email đã tồn tại');
+        }
         req.body = {
-            email: body.email,
-            password: body.password,
+            email,
+            password: hashPassword(body.password),
             fullName: body.fullName || '',
             role: 'user', // ÉP vai trò user, không cho tự đăng ký admin
             createdAt: new Date().toISOString(),
@@ -174,6 +198,17 @@ module.exports = (req, res, next) => {
 
     // ----- 5. ADMIN: toàn quyền (nhưng vẫn kiểm tra dữ liệu /runs nếu POST/PATCH) -----
     if (payload.role === 'admin') {
+        if (resource === 'users' && ['POST', 'PATCH', 'PUT'].includes(method)) {
+            const hasPassword = req.body
+                && Object.prototype.hasOwnProperty.call(req.body, 'password');
+            if ((method === 'POST' || method === 'PUT') && !hasPassword) {
+                return deny(res, 400, 'Thiếu mật khẩu');
+            }
+            if (hasPassword && (typeof req.body.password !== 'string' || !req.body.password)) {
+                return deny(res, 400, 'Mật khẩu không hợp lệ');
+            }
+            if (hasPassword) req.body = { ...req.body, password: hashPassword(req.body.password) };
+        }
         if (resource === 'runs' && parts.length <= 2) {
             const adminTargetUserId = req.body && req.body.userId ? req.body.userId : payload.id;
             if (method === 'POST' && !id) {
@@ -231,6 +266,12 @@ module.exports = (req, res, next) => {
         if (method === 'PATCH') {
             const { role, id: _ignoreId, ...allowed } = req.body || {}; // loại role, id
             req.body = allowed;
+            if (Object.prototype.hasOwnProperty.call(allowed, 'password')) {
+                if (typeof allowed.password !== 'string' || !allowed.password) {
+                    return deny(res, 400, 'Mật khẩu không hợp lệ');
+                }
+                req.body = { ...allowed, password: hashPassword(allowed.password) };
+            }
             return next();
         }
         return deny(res, 405, 'Không hỗ trợ thao tác này');

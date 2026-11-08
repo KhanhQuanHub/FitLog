@@ -4,7 +4,7 @@
       "id": 1,
       "name": "Nguyễn Khánh Quân",
       "email": "quan@fitlog.vn",
-      "password": "123456",
+      "password": "scrypt$16384$8$1$05da23dfa1b8d971319ab749df74520f$ae089a396ccd61cbf0822269271f9857f622adac7611f67fd2f1d728b869c5a079c6afbc902c8f343d0e55ec3480757bf017fd40c0d73170bc61959d251c4ec5",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
       "createdAt": "2026-10-01T08:00:00.000Z"
@@ -13,7 +13,7 @@
       "id": 2,
       "name": "Thanh Hà",
       "email": "ha@figlog.vn",
-      "password": "123456",
+      "password": "scrypt$16384$8$1$8b0b03a528855779028d97d27cb310a3$761c566d1f97f3ba258f3069ff3a33ae15f0f5121ea4e3f289d0d03c72f99a99e4d8d279eac0deb941ac1b6b0b6def0b2d6ce88beceb29bd865e5f4a157c7953",
       "fullName": "Thanh Hà",
       "role": "user",
       "createdAt": "2026-10-03T09:30:00.000Z"
@@ -22,14 +22,14 @@
       "id": 3,
       "name": "Quản trị viên",
       "email": "admin@figlog.vn",
-      "password": "admin123",
+      "password": "scrypt$16384$8$1$c2f81682d9c7578fd96b3e56cd4fe851$2a81915dd35eb50b9559fcef07fb063d7496e186aaaaa15aafb8bb4634522549b74fefdfc408b14cfb31aade76f7887f50c1ad5227a7b9db8e75ec4f33500256",
       "fullName": "Quản trị viên",
       "role": "admin",
       "createdAt": "2026-09-30T07:00:00.000Z"
     },
     {
       "email": "nguyenkhanhquan9999@gmail.com",
-      "password": "@KQuan123",
+      "password": "scrypt$16384$8$1$812cca80d7195cc80b00c7335af47b64$070b9a8f40465cee4e8563d241fe04e7318d7b6fef1d6f6ca11fcf7306ebc7513a7f55cd3ac2f98a11e0bff2157e2243704cac807174638c292c05f0ee06aaed",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T13:10:40.096Z",
@@ -37,7 +37,7 @@
     },
     {
       "email": "nguyenkhanhquan@gmail.com",
-      "password": "@KQuan231",
+      "password": "scrypt$16384$8$1$e9a4ef57f0b97fe56c0570086345988c$e2813064bb0918890d939bbb044be4a0b82e4ffbdd0ccb2394d86f2c02a0d455bd73d8bfac955c891b0864f0d726bb2cb2cfd6c4c10661eaf376aff021807089",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T14:19:41.685Z",
@@ -45,7 +45,7 @@
     },
     {
       "email": "quan@gmail.com",
-      "password": "@KQuan231",
+      "password": "scrypt$16384$8$1$955c8ac1259026b817aae567b2295326$755bd68fd95f3d09e80ea4bd26527a1511fe1bc5ab5d31f3a6374ecb5de35b77883e4912a777610b225daa5a17024368b41eacdb1bd5f119c04db799f4efe20e",
       "fullName": "Quân",
       "role": "user",
       "createdAt": "2026-10-29T00:15:54.837Z",
@@ -53,11 +53,20 @@
     },
     {
       "email": "quan1@gmail.com",
-      "password": "@KQuan12",
+      "password": "scrypt$16384$8$1$4c3d946ef1ec283f770d50d1e0c72dcb$adbdf78ab0b75103540640c78f2bfd7f152ffeecb9bde95ebc2b4b5f43c9a6f601dfce3e0374e255bc28fbda8cdb0df057bd132f49d808cb9014bd2616a22bc3",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
       "createdAt": "2026-11-07T09:03:54.443Z",
       "id": 7
+    },
+    {
+      "name": "Đình sĩ",
+      "email": "sitran@gmail.com",
+      "password": "scrypt$16384$8$1$5ddba19f9e0b3fbffe1dd4acc824fc5e$3eb95c4d90200770dcc06bfa0e2ccc21dea1927e12be5fc8dd9e770fa5ef2195bcc14227198f2be08c785e78c3d2c411b6c41b5940fbefffafc0e06d8fc42095",
+      "fullName": "Đình sĩ",
+      "role": "user",
+      "createdAt": "2026-11-08T06:43:38.763Z",
+      "id": 8
     }
   ],
   "profiles": [
@@ -369,6 +378,75 @@
         }
       },
       "id": 5
+    },
+    {
+      "userId": 8,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 22,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Dẻo dai",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 22,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "mobility"
+            ],
+            "focus": [
+              "lower"
+            ],
+            "activity": [
+              "sports"
+            ],
+            "styles": [
+              "walking"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "mat"
+            ],
+            "intensity": [
+              "challenge"
+            ],
+            "barriers": [
+              "motivation"
+            ]
+          }
+        }
+      },
+      "id": 6
     }
   ],
   "weightHistory": [

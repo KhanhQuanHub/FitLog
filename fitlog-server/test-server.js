@@ -12,6 +12,7 @@ const path = require('path');
 const assert = require('assert');
 const jsonServer = require('json-server');
 const authMiddleware = require('./auth');
+const { isPasswordHash, migrateUsers, verifyPassword } = require('./passwords');
 
 const PORT = 3456;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -25,6 +26,7 @@ function rebuildDatabase() {
         .filter((line) => !line.trim().startsWith('//'))
         .join('\n');
     const data = JSON.parse(clean);
+    migrateUsers(data.users);
     fs.writeFileSync(DB_JSON, JSON.stringify(data, null, 2));
 }
 
@@ -49,6 +51,7 @@ async function apiCall(endpoint, options = {}) {
 }
 
 async function runAllTests() {
+    const originalDatabase = fs.readFileSync(DB_JSON, 'utf8');
     rebuildDatabase();
 
     const app = jsonServer.create();
@@ -91,6 +94,9 @@ async function runAllTests() {
             assert.ok(res.data.token);
             assert.strictEqual(res.data.user.id, 1);
             assert.strictEqual(res.data.user.password, undefined);
+            const storedPassword = app.db.getState().users.find((user) => user.id === 1).password;
+            assert.ok(isPasswordHash(storedPassword));
+            assert.ok(verifyPassword('123456', storedPassword));
             user1Token = res.data.token;
         });
 
@@ -130,6 +136,18 @@ async function runAllTests() {
             assert.strictEqual(res.status, 201);
             assert.strictEqual(res.data.role, 'user');
             assert.strictEqual(res.data.password, undefined);
+            const storedPassword = app.db.getState().users.find(
+                (user) => user.email === 'newuser@figlog.vn'
+            ).password;
+            assert.ok(isPasswordHash(storedPassword));
+            assert.ok(verifyPassword('123456', storedPassword));
+
+            const loggedIn = await apiCall('/login', {
+                method: 'POST',
+                body: { email: ' NEWUSER@FIGLOG.VN ', password: '123456' },
+            });
+            assert.strictEqual(loggedIn.status, 200);
+            assert.ok(loggedIn.data.token);
         });
 
         await testCase(5, 'POST /users thiếu email hoặc mật khẩu trả về 400', async () => {
@@ -300,6 +318,11 @@ async function runAllTests() {
             const badToken = await apiCall('/workouts', { token: 'token.gia.mao' });
             assert.strictEqual(nested.status, 403);
             assert.strictEqual(badToken.status, 401);
+        });
+
+        await testCase(37, 'GET /users truyền email và mật khẩu trên query bị từ chối', async () => {
+            const res = await apiCall('/users?email=quan%40figlog.vn&password=123456');
+            assert.strictEqual(res.status, 401);
         });
 
         // ==================== PHẦN B: 12 CA KIỂM THỬ MỚI CHO /runs ====================
@@ -488,8 +511,7 @@ async function runAllTests() {
         });
     } finally {
         await new Promise((resolve) => server.close(resolve));
-        // Khôi phục lại db.json sạch từ db.jsonc sau khi chạy kiểm thử
-        rebuildDatabase();
+        fs.writeFileSync(DB_JSON, originalDatabase);
     }
 
     const failed = results.filter((r) => !r.passed);

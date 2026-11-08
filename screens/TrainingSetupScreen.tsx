@@ -212,8 +212,8 @@ export default function TrainingSetupScreen({ navigation, route }: Props) {
               <Text numberOfLines={2} style={[styles.sectionTitle, { color: colors.text }]}>{current.goalAnswers ? answerSummary(current.goalAnswers, 'goals') : plan.title}</Text>
               <Text style={[styles.small, { color: colors.textSecondary }]}>{draft.sessions} buổi/tuần · {draft.minutes} phút/buổi · {draft.muscles.length} nhóm cơ</Text>
             </View>
-            <Text style={[styles.sectionTitle, { color: colors.text }]}>{plan.exercises.length} bài gợi ý</Text>
-            <ExerciseList setup={current} />
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>{plan.exercises.length} bài gợi ý cho cả tuần</Text>
+            <ExerciseList exercises={plan.exercises} />
             <TrainingDetails setup={current} />
             <Text style={[styles.small, { color: colors.textMuted }]}>Gợi ý tham khảo. Có bệnh nền, hãy hỏi ý kiến chuyên gia.</Text>
           </>}

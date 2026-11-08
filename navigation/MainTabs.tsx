@@ -24,6 +24,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import TodayScreen from '../screens/TodayScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 import {
   fontSize,
   fontWeight,
@@ -291,21 +292,6 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
         );
       })}
     </View>
-  );
-}
-
-function ScheduleScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Lịch tập</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Lịch tập luyện trong tuần
-      </Text>
-    </SafeAreaView>
   );
 }
 

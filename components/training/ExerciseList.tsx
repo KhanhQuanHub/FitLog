@@ -2,14 +2,14 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { fontSize, fontWeight, layout, radius, spacing } from '../../constants/theme';
-import { muscleLabel, recommendTraining, type TrainingSetup } from '../../domain/training';
+import { muscleLabel, type SuggestedExercise } from '../../domain/training';
 import { useTheme } from '../../store/themeStore';
+import ExerciseGuide from './ExerciseGuide';
 
-export default function ExerciseList({ setup }: { setup: TrainingSetup }) {
+export default function ExerciseList({ exercises }: { exercises: SuggestedExercise[] }) {
   const { colors } = useTheme();
   const [showAll, setShowAll] = useState(false);
   const [opened, setOpened] = useState<string | null>(null);
-  const exercises = recommendTraining(setup).exercises;
   const visible = showAll ? exercises : exercises.slice(0, 4);
   return <View style={styles.list}>
     {visible.map((exercise, index) => {
@@ -20,11 +20,12 @@ export default function ExerciseList({ setup }: { setup: TrainingSetup }) {
           <View style={[styles.number, { backgroundColor: colors.primaryLight }]}><Text style={[styles.numberText, { color: colors.primary }]}>{index + 1}</Text></View>
           <View style={styles.content}>
             <Text style={[styles.name, { color: colors.text }]}>{exercise.name}</Text>
-            <Text style={[styles.meta, { color: colors.textMuted }]}>{muscleLabel(exercise.muscle)} · {exercise.sets} × {exercise.reps} lần</Text>
+            <Text style={[styles.meta, { color: colors.textMuted }]}>{muscleLabel(exercise.muscle)} · {exercise.sets} hiệp × {exercise.reps} lần</Text>
+            {!expanded && <Text style={[styles.meta, { color: colors.primary }]}>Xem minh họa và hướng dẫn</Text>}
           </View>
           <Ionicons name={expanded ? 'chevron-up' : 'chevron-down'} size={18} color={colors.textMuted} />
         </Pressable>
-        {expanded && <Text style={[styles.description, { color: colors.textSecondary }]}>{exercise.instruction}</Text>}
+        {expanded && <ExerciseGuide exercise={exercise} />}
       </View>;
     })}
     {exercises.length > 4 && <Pressable accessibilityRole="button" accessibilityLabel={showAll ? 'Thu gọn danh sách bài tập' : 'Xem tất cả bài tập'}
@@ -41,7 +42,6 @@ const styles = StyleSheet.create({
   numberText: { fontSize: fontSize.caption, fontWeight: fontWeight.semibold },
   content: { flex: 1, gap: spacing.xs }, name: { fontSize: fontSize.body, lineHeight: 22, fontWeight: fontWeight.semibold },
   meta: { fontSize: fontSize.caption, lineHeight: 20 },
-  description: { fontSize: fontSize.caption, lineHeight: 22, paddingBottom: spacing.md },
   more: { minHeight: layout.minTouchSize, alignItems: 'center', justifyContent: 'center' },
   moreText: { fontSize: fontSize.caption, fontWeight: fontWeight.semibold },
 });

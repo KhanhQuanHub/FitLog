@@ -1,13 +1,38 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { MUSCLES, MUSCLE_GROUPS, CONDITIONS, PRESETS, GOALS, FOCUS_OPTIONS, choosePlan, recommendTraining, validateSetup, validateGoalAnswers, suggestMuscles, sameMuscleSelection, isTrainingSetup, normalizeTrainingSetup, normalizeGoalAnswers, TRAINING_QUESTIONS, QUESTION_IDS, createGoalAnswers, toggleGoalOption, sameGoalAnswers } from '../domain/training.ts';
+import { MUSCLES, MUSCLE_GROUPS, CONDITIONS, EXERCISES, PRESETS, GOALS, FOCUS_OPTIONS, choosePlan, recommendTraining, buildWeeklySchedule, validateSetup, validateGoalAnswers, suggestMuscles, sameMuscleSelection, isTrainingSetup, normalizeTrainingSetup, normalizeGoalAnswers, TRAINING_QUESTIONS, QUESTION_IDS, createGoalAnswers, toggleGoalOption, sameGoalAnswers } from '../domain/training.ts';
 import { BODY_REGION_MUSCLES } from '../components/training/bodyRegions.ts';
+import { EXERCISE_GUIDES } from '../domain/exerciseGuides.ts';
 
 const base = {
   version: 2, age: 22, height: 170, weight: 60, gender: 'Khác', conditions: [], healthNote: '',
   experience: 'beginner', sessions: 3, minutes: 25, muscles: ['chest'],
 };
+
+test('mỗi bài gợi ý có đủ hai tư thế và hướng dẫn kỹ thuật', () => {
+  assert.deepEqual(Object.keys(EXERCISE_GUIDES).sort(), EXERCISES.map(exercise => exercise.id).sort());
+  for (const guide of Object.values(EXERCISE_GUIDES)) {
+    assert.equal(guide.poses.length, 2);
+    assert.ok(guide.setup.trim() && guide.cue.trim());
+    assert.notDeepEqual(guide.poses[0], guide.poses[1]);
+  }
+});
+
+test('chia 13 bài vào 3 buổi mà vẫn giữ đủ bài trong tuần', () => {
+  const { exercises } = recommendTraining({ ...base, muscles: MUSCLES.slice(0, 13).map(m => m.id) });
+  const schedule = buildWeeklySchedule(3, exercises);
+  assert.deepEqual(schedule.map(session => session.day), [0, 2, 4]);
+  assert.deepEqual(schedule.map(session => session.exercises.length), [5, 4, 4]);
+  assert.deepEqual(schedule.flatMap(session => session.exercises.map(e => e.id)).sort(), exercises.map(e => e.id).sort());
+});
+
+test('lặp lại bài đã chọn nếu số bài ít hơn số buổi', () => {
+  const { exercises } = recommendTraining(base);
+  const schedule = buildWeeklySchedule(6, exercises);
+  assert.equal(new Set(schedule.map(session => session.day)).size, 6);
+  assert.deepEqual(schedule.map(session => session.exercises), Array.from({ length: 6 }, () => exercises));
+});
 
 test('chặn chỉ số không hợp lệ và yêu cầu ghi chú tình trạng khác', () => {
   for (const patch of [{ age: 0 }, { age: 17 }, { age: 20.5 }, { height: NaN }, { weight: Infinity }, { weight: 0 }, { muscles: [] }, { muscles: ['invalid'] }, { conditions: ['invalid'] }, { sessions: 7 }, { minutes: 0 }, { conditions: ['other'] }]) {

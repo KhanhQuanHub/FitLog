@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "dd921ae9-e027-4a0f-929a-c669a204625c",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\candidate.json",
+  "output": "D:\\FitLog\\.archify\\erd-fitlog-database-20261104-205900\\fitlog-database.html",
+  "specification": {
+    "sha256": "8936801859dc39e7b4bde218a65d90b61ca5398012fc4234f54832db327edf06",
+    "bytes": 11287
+  },
+  "artifact": {
+    "sha256": "23d8855f08098df8084dae5bf0a9845bab2b8924290be7d3d29fd4dc0adae8ab",
+    "bytes": 884168
+  }
+}

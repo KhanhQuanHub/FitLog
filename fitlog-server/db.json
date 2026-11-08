@@ -10,6 +10,7 @@
     },
     {
       "id": 2,
+      "name": "Thanh Hà",
       "email": "ha@figlog.vn",
       "password": "scrypt$16384$8$1$c5c8b4b4828dbbe3cc1b5bed9ac40107$b86ca0f9be27e6e7cee2d39f38b4461e9d3d845c8c8958d7b17340178cc5296c9daeba3f73af05fed114bb442cc104cbcb76a4933e3f50d62e6744bbac4a0c36",
       "fullName": "Thanh Hà",
@@ -18,6 +19,7 @@
     },
     {
       "id": 3,
+      "name": "Quản trị viên",
       "email": "admin@figlog.vn",
       "password": "scrypt$16384$8$1$bc27ca1c2f04fce437ce6c70ce2aee2f$69bd023270c9fb68e9d13ee8a7846a964f87c4613039a3b861f90512253e0fd0242e64507ee7784d1084a2358408edad7edfa2481c5a7418d391c672c116a7d5",
       "fullName": "Quản trị viên",
@@ -53,7 +55,7 @@
       "password": "scrypt$16384$8$1$1ca87e55db2d1b3c888c649746eca4ed$546aaa5730e6dd8bc605fbb8873aecbb8591dbe98f58b4d8ecbc1a07477acab87de2ec2a18302ab3b353ffa7ee4831f68105a3ed6032bbe0be8a2d50d80184e0",
       "fullName": "Trần Đình Sĩ",
       "role": "user",
-      "createdAt": "2026-11-07T07:17:46.580Z",
+      "createdAt": "2026-11-07T09:03:54.443Z",
       "id": 7
     },
     {
@@ -158,54 +160,132 @@
     },
     {
       "userId": 7,
-      "heightCm": 150,
+      "heightCm": 170,
       "weightKg": 60,
-      "age": 20,
-      "gender": "female",
-      "sessionsPerWeek": 4,
-      "healthCondition": "Xương khớp",
-      "currentGoal": "Giảm cân",
+      "age": 25,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Sức khỏe + Tăng cơ",
       "trainingSetup": {
         "version": 2,
-        "height": 150,
+        "height": 170,
         "weight": 60,
-        "age": 20,
-        "gender": "Nữ",
-        "conditions": [
-          "joint"
-        ],
+        "age": 25,
+        "gender": "Nam",
+        "conditions": [],
         "healthNote": "",
         "experience": "beginner",
-        "sessions": 4,
+        "sessions": 3,
         "minutes": 25,
         "muscles": [
           "chest",
+          "abs",
           "obliques",
           "shoulders",
           "biceps",
           "triceps",
+          "forearms",
+          "traps",
           "back",
           "lowerBack",
+          "neck",
           "glutes",
           "quads",
           "hamstrings",
+          "adductors",
           "calves",
-          "abs"
+          "tibialis"
         ],
         "goalAnswers": {
           "version": 2,
           "selections": {
             "goals": [
-              "weightLoss"
+              "muscle",
+              "health"
             ],
             "focus": [
-              "lower"
+              "upper"
             ],
             "activity": [
+              "physical"
+            ],
+            "styles": [
+              "mobility"
+            ],
+            "places": [
+              "gym"
+            ],
+            "equipment": [
+              "chair"
+            ],
+            "intensity": [
+              "challenge"
+            ],
+            "barriers": [
+              "motivation"
+            ]
+          }
+        }
+      },
+      "id": 3
+    },
+    {
+      "userId": 5,
+      "heightCm": 170,
+      "weightKg": 60,
+      "age": 64,
+      "gender": "male",
+      "sessionsPerWeek": 3,
+      "healthCondition": "Không có",
+      "currentGoal": "Tăng cơ + Sức bền",
+      "trainingSetup": {
+        "version": 2,
+        "height": 170,
+        "weight": 60,
+        "age": 64,
+        "gender": "Nam",
+        "conditions": [],
+        "healthNote": "",
+        "experience": "beginner",
+        "sessions": 3,
+        "minutes": 25,
+        "muscles": [
+          "chest",
+          "abs",
+          "obliques",
+          "shoulders",
+          "biceps",
+          "triceps",
+          "forearms",
+          "traps",
+          "back",
+          "lowerBack",
+          "neck",
+          "glutes",
+          "quads",
+          "hamstrings",
+          "adductors",
+          "calves",
+          "tibialis"
+        ],
+        "goalAnswers": {
+          "version": 2,
+          "selections": {
+            "goals": [
+              "endurance",
+              "muscle"
+            ],
+            "focus": [
+              "lower",
+              "upper"
+            ],
+            "activity": [
+              "physical",
               "walking"
             ],
             "styles": [
-              "gentle"
+              "mobility"
             ],
             "places": [
               "gym"
@@ -214,7 +294,7 @@
               "wall"
             ],
             "intensity": [
-              "gradual"
+              "challenge"
             ],
             "barriers": [
               "technique"

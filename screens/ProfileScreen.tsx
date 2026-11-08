@@ -2,9 +2,6 @@ import { useEffect, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fontSize, fontWeight, layout, radius, spacing, type ThemeMode } from '../constants/theme';
 import { calculateBmi } from '../domain/bmi';
 import { answerSummary, healthLabel, muscleLabel, TRAINING_QUESTIONS } from '../domain/training';
@@ -12,6 +9,7 @@ import { useAuthStore } from '../store/authStore';
 import { useTraining } from '../store/TrainingContext';
 import { useTheme } from '../store/themeStore';
 import Button from '../components/ui/Button';
+import TrainingSetupScreen from './TrainingSetupScreen';
 import { getWorkouts } from '../services/api';
 import { localDateString } from '../utils/dateLocal';
 import { getWorkoutRemindersEnabled, setWorkoutRemindersEnabled, syncWorkoutReminders } from '../services/workoutReminders';
@@ -24,23 +22,41 @@ export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
   const { setup } = useTraining();
   const { colors, themeMode, setThemeMode } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [editingSetup, setEditingSetup] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
   const [reminderBusy, setReminderBusy] = useState(false);
   const [reminderError, setReminderError] = useState<string | null>(null);
+
   useEffect(() => {
     if (user?.id === undefined || user?.id === null) return;
     let active = true;
     getWorkoutRemindersEnabled(user.id)
-      .then(enabled => { if (active) setReminderEnabled(enabled); })
-      .catch(error => {
-        if (active) setReminderError(error instanceof Error ? error.message : 'Không tải được cài đặt nhắc lịch.');
+      .then((enabled) => {
+        if (active) setReminderEnabled(enabled);
+      })
+      .catch((error) => {
+        if (active)
+          setReminderError(
+            error instanceof Error ? error.message : 'Không tải được cài đặt nhắc lịch.'
+          );
       });
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [user?.id]);
-  if (!user || !setup) return null;
+
+  if (!user) return null;
+  if (!setup || editingSetup) {
+    const mode = setup ? 'EditTraining' : 'Onboarding';
+    return (
+      <TrainingSetupScreen
+        navigation={{ goBack: () => setEditingSetup(false) } as never}
+        route={{ key: mode, name: mode } as never}
+      />
+    );
+  }
   const bmi = calculateBmi(setup.weight, setup.height, colors);
   const initial = user.fullName.trim().split(' ').pop()?.charAt(0).toUpperCase() || 'F';
   const strideCm = Math.round(setup.height * (setup.gender === 'Nữ' ? 0.413 : 0.415) * 10) / 10;
@@ -86,7 +102,7 @@ export default function ProfileScreen() {
             <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text><Text style={[styles.small, { color: colors.textMuted }]}>{label}</Text>
           </View>)}
         </View>
-        <Button title="Chỉnh sửa" accessibilityLabel="Thiết lập lại chỉ số & vùng cơ" icon="options-outline" onPress={() => navigation.navigate('EditTraining')} />
+        <Button title="Chỉnh sửa" accessibilityLabel="Thiết lập lại chỉ số & vùng cơ" icon="options-outline" onPress={() => setEditingSetup(true)} />
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Thông tin</Text>
           {setup.goalAnswers && <Text numberOfLines={2} style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Mục tiêu:</Text> {answerSummary(setup.goalAnswers, 'goals')}</Text>}

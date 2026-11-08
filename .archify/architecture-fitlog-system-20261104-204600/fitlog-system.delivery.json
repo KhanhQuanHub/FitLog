@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "24fdc29e-d4c6-4ce9-9151-7efe143cd5fd",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\candidate.json",
+  "output": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\fitlog-system.html",
+  "specification": {
+    "sha256": "f7ecdc57569ada92fdc02f1f1b0f2b3f998424d4f167065686d3ba6e206adaee",
+    "bytes": 9566
+  },
+  "artifact": {
+    "sha256": "740ef56651e9a09237acfa6fa9b4a3302f75f788dd31cd68a4ad4a8843a375f2",
+    "bytes": 857780
+  }
+}

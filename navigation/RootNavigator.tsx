@@ -15,11 +15,10 @@ import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 import MainTabs from './MainTabs';
+import { Stack } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
 import { useLocationStore } from '../store/locationStore';
-import TrainingSetupScreen from '../screens/TrainingSetupScreen';
-import { useTraining } from '../store/TrainingContext';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -31,14 +30,11 @@ export type RootStackParamList = {
   EditTraining: undefined;
 };
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
-
 export default function RootNavigator() {
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn);
   const isRestoring = useAuthStore((state) => state.isRestoring);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const { colors } = useTheme();
-  const { setup } = useTraining();
 
   useEffect(() => {
     restoreSession();
@@ -63,7 +59,7 @@ export default function RootNavigator() {
   }
 
   return (
-    <Stack.Navigator
+    <Stack
       screenOptions={{
         headerShown: false,
         animation: 'fade',
@@ -85,6 +81,14 @@ export default function RootNavigator() {
         </>
       )}
     </Stack.Navigator>
+      <Stack.Protected guard={!isLoggedIn}>
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
+      </Stack.Protected>
+      <Stack.Protected guard={isLoggedIn}>
+        <Stack.Screen name="(tabs)" />
+      </Stack.Protected>
+    </Stack>
   );
 }
 

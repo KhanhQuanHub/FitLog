@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Svg, { Circle, Polyline } from 'react-native-svg';
 
 import {
   fontSize,
@@ -29,6 +30,8 @@ import { dedupeRuns, fetchRunHistoryPage, syncQueuedRuns } from '../../services/
 import { useTheme } from '../../store/themeStore';
 import { formatPaceSec } from '../../utils/runMath';
 import { formatDistance, formatDuration, formatInt } from '../../utils/format';
+import { normalizeRouteCoords } from '../../utils/geo';
+import RunSummaryScreen from './RunSummaryScreen';
 
 const PAGE_LIMIT = 20;
 const MAX_STATE_ITEMS = 120;
@@ -54,6 +57,80 @@ const ItemSeparator = memo(function ItemSeparator() {
   return <View style={staticStyles.separator} />;
 });
 
+// Thumbnail SVG siêu nhẹ vẽ lộ trình trong danh sách (không tạo WebView trong FlatList)
+const RouteMiniThumbnail = memo(function RouteMiniThumbnail({ routeCoords, colors }) {
+  const geometry = useMemo(() => {
+    const coords = normalizeRouteCoords(routeCoords);
+    if (coords.length < 2) return null;
+
+    let minLat = coords[0].latitude;
+    let maxLat = coords[0].latitude;
+    let minLng = coords[0].longitude;
+    let maxLng = coords[0].longitude;
+    for (let i = 1; i < coords.length; i += 1) {
+      const { latitude, longitude } = coords[i];
+      if (latitude < minLat) minLat = latitude;
+      if (latitude > maxLat) maxLat = latitude;
+      if (longitude < minLng) minLng = longitude;
+      if (longitude > maxLng) maxLng = longitude;
+    }
+
+    const size = 48;
+    const pad = 6;
+    const span = Math.max(maxLat - minLat, maxLng - minLng, 1e-5);
+    const scale = (size - pad * 2) / span;
+    const offsetX = (size - (maxLng - minLng) * scale) / 2;
+    const offsetY = (size - (maxLat - minLat) * scale) / 2;
+
+    const project = (pt) => ({
+      x: offsetX + (pt.longitude - minLng) * scale,
+      y: size - (offsetY + (pt.latitude - minLat) * scale),
+    });
+
+    const projected = coords.map(project);
+    return {
+      pointsAttr: projected.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' '),
+      start: projected[0],
+      end: projected[projected.length - 1],
+    };
+  }, [routeCoords]);
+
+  if (!geometry) {
+    return (
+      <View
+        style={[
+          staticStyles.thumbBox,
+          { borderColor: colors.border, backgroundColor: colors.background },
+        ]}
+      >
+        <Ionicons name="map-outline" size={18} color={colors.textMuted} />
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={[
+        staticStyles.thumbBox,
+        { borderColor: colors.border, backgroundColor: '#0F172A' },
+      ]}
+    >
+      <Svg width={48} height={48} viewBox="0 0 48 48">
+        <Polyline
+          points={geometry.pointsAttr}
+          fill="none"
+          stroke="#16A34A"
+          strokeWidth={2.4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <Circle cx={geometry.start.x} cy={geometry.start.y} r={2.6} fill="#0EA5E9" />
+        <Circle cx={geometry.end.x} cy={geometry.end.y} r={2.8} fill="#EF4444" />
+      </Svg>
+    </View>
+  );
+});
+
 // Dòng lịch sử bọc React.memo
 const RunHistoryRow = memo(function RunHistoryRow({ item, onPressItem, colors }) {
   const handlePress = useCallback(() => {
@@ -75,48 +152,54 @@ const RunHistoryRow = memo(function RunHistoryRow({ item, onPressItem, colors })
       ]}
       onPress={handlePress}
     >
-      <View style={staticStyles.rowTop}>
-        <Text style={[staticStyles.rowDate, { color: colors.textMuted }]} numberOfLines={1}>
-          {item?.date || '--'}
-        </Text>
-        <View
-          style={[
-            staticStyles.statusPill,
-            {
-              backgroundColor: isQueued ? colors.warningLight : colors.primaryLight,
-            },
-          ]}
-        >
-          <Text
-            style={[
-              staticStyles.statusText,
-              { color: isQueued ? colors.warning : colors.primary },
-            ]}
-          >
-            {isQueued ? 'Chờ gửi' : 'Đã lưu'}
-          </Text>
+      <View style={staticStyles.rowBody}>
+        <View style={staticStyles.rowInfoCol}>
+          <View style={staticStyles.rowTop}>
+            <Text style={[staticStyles.rowDate, { color: colors.textMuted }]} numberOfLines={1}>
+              {item?.date || '--'}
+            </Text>
+            <View
+              style={[
+                staticStyles.statusPill,
+                {
+                  backgroundColor: isQueued ? colors.warningLight : colors.primaryLight,
+                },
+              ]}
+            >
+              <Text
+                style={[
+                  staticStyles.statusText,
+                  { color: isQueued ? colors.warning : colors.primary },
+                ]}
+              >
+                {isQueued ? 'Chờ gửi' : 'Đã lưu'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={staticStyles.rowMiddle}>
+            <Text style={[staticStyles.rowDistance, { color: colors.primary }]}>
+              {formatDistance(Number(item?.distanceKm) || 0)} km
+            </Text>
+            <Text style={[staticStyles.rowDuration, { color: colors.text }]}>
+              {formatDuration(Number(item?.durationSec) || 0)}
+            </Text>
+          </View>
+
+          <View style={staticStyles.rowBottom}>
+            <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
+              {formatInt(Number(item?.steps) || 0)} bước
+            </Text>
+            <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
+              {formatPaceSec(item?.paceSecPerKm)} /km
+            </Text>
+            <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
+              {formatInt(Number(item?.calories) || 0)} kcal
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <View style={staticStyles.rowMiddle}>
-        <Text style={[staticStyles.rowDistance, { color: colors.primary }]}>
-          {formatDistance(Number(item?.distanceKm) || 0)} km
-        </Text>
-        <Text style={[staticStyles.rowDuration, { color: colors.text }]}>
-          {formatDuration(Number(item?.durationSec) || 0)}
-        </Text>
-      </View>
-
-      <View style={staticStyles.rowBottom}>
-        <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
-          {formatInt(Number(item?.steps) || 0)} bước
-        </Text>
-        <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
-          {formatPaceSec(item?.paceSecPerKm)} /km
-        </Text>
-        <Text style={[staticStyles.rowMetric, { color: colors.textSecondary }]}>
-          {formatInt(Number(item?.calories) || 0)} kcal
-        </Text>
+        <RouteMiniThumbnail routeCoords={item?.routeCoords} colors={colors} />
       </View>
     </Pressable>
   );
@@ -132,6 +215,7 @@ export default function RunHistoryScreen({ onBack, onSelectRun }) {
   const [syncing, setSyncing] = useState(false);
   const [queuedCount, setQueuedCount] = useState(0);
   const [bannerText, setBannerText] = useState('');
+  const [internalSelectedRun, setInternalSelectedRun] = useState(null);
 
   const pageRef = useRef(1);
   const hasMoreRef = useRef(true);
@@ -204,9 +288,20 @@ export default function RunHistoryScreen({ onBack, onSelectRun }) {
     }
   }, [loadPage, syncing]);
 
+  const handlePressRow = useCallback(
+    (item) => {
+      if (typeof onSelectRun === 'function') {
+        onSelectRun(item);
+      } else {
+        setInternalSelectedRun(item);
+      }
+    },
+    [onSelectRun]
+  );
+
   const renderItem = useCallback(
-    ({ item }) => <RunHistoryRow item={item} onPressItem={onSelectRun} colors={colors} />,
-    [colors, onSelectRun]
+    ({ item }) => <RunHistoryRow item={item} onPressItem={handlePressRow} colors={colors} />,
+    [colors, handlePressRow]
   );
 
   const renderFooter = useCallback(() => {
@@ -226,6 +321,17 @@ export default function RunHistoryScreen({ onBack, onSelectRun }) {
       </View>
     );
   }, [loadingInitial, styles.emptyBox, styles.emptyTitle]);
+
+  if (internalSelectedRun) {
+    return (
+      <RunSummaryScreen
+        run={internalSelectedRun}
+        syncStatus={internalSelectedRun._queued ? 'queued' : 'saved'}
+        onSyncNow={handleSyncQueue}
+        onDone={() => setInternalSelectedRun(null)}
+      />
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -299,7 +405,27 @@ const staticStyles = StyleSheet.create({
     borderRadius: radius.lg,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+    justifyContent: 'center',
+  },
+  rowBody: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  rowInfoCol: {
+    flex: 1,
+    height: '100%',
     justifyContent: 'space-between',
+  },
+  thumbBox: {
+    width: 52,
+    height: 52,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
   rowTop: {
     flexDirection: 'row',

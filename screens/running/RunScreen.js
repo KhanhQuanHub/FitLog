@@ -10,9 +10,19 @@
 // - Đồng bộ hoàn toàn chế độ Sáng / Tối với hệ thống màu tối giản; chữ >= 14sp, vùng chạm >= 44px.
 // ============================================================================
 
-import React, { Suspense, lazy, memo, useCallback, useMemo, useState } from 'react';
+import React, {
+  Suspense,
+  lazy,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
+  AppState,
   Modal,
   Pressable,
   ScrollView,
@@ -32,11 +42,25 @@ import {
   radius,
   spacing,
 } from '../../constants/theme';
+import {
+  ROUTE_DOWNSAMPLE_TARGET,
+  ROUTE_DRAFT_SAVE_INTERVAL_MS,
+  ROUTE_MAX_POINTS,
+  ROUTE_MIN_POINT_DISTANCE_M,
+} from '../../constants/runRoute';
 import { useRunTracker } from '../../hooks/useRunTracker';
 import { login as apiLogin } from '../../services/api';
+import { loadRouteDraft, saveRouteDraft } from '../../services/runRepository';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../store/themeStore';
 import { formatDistance, formatDuration, formatInt } from '../../utils/format';
+import {
+  compactCoordinate,
+  downsampleRoute,
+  haversineDistanceM,
+  routeDistanceM,
+} from '../../utils/geo';
+import { suggestStrideFromGps } from '../../utils/strideSuggestion';
 import RunMapView from '../../components/run/RunMapView';
 import RunSummaryScreen from './RunSummaryScreen';
 
@@ -73,9 +97,63 @@ export default function RunScreen() {
     gender: authUser?.gender === 'Nữ' ? 'female' : 'male',
   };
 
+  // ==================== LƯU LỘ TRÌNH TRONG useRef (KHÔNG GÂY RE-RENDER) ====================
+  // Mảng tọa độ { latitude, longitude } của buổi chạy hiện tại (tối đa ROUTE_MAX_POINTS điểm)
+  const routeCoordsRef = useRef([]);
+  const lastSavedPointRef = useRef(null);
+  const lastDraftSavedMsRef = useRef(0);
+  const activeClientIdRef = useRef(null);
+  const mapRef = useRef(null);
+
+  // Gợi ý hiệu chuẩn sải chân sau buổi chạy (hiển thị trên RunSummaryScreen)
+  const [strideSuggestion, setStrideSuggestion] = useState(null);
+
+  // Callback nhận vị trí GPS hợp lệ từ useRunTracker (KHÔNG gọi setState tại đây)
+  const handleLocationUpdate = useCallback((point) => {
+    if (!point) return;
+
+    // 1. Luôn cập nhật chấm vị trí người chạy trên bản đồ
+    mapRef.current?.setLiveLocation(point);
+
+    // 2. Chỉ thêm điểm vào lộ trình khi là điểm đầu tiên hoặc cách điểm trước >= ROUTE_MIN_POINT_DISTANCE_M (15 m)
+    const prev = lastSavedPointRef.current;
+    if (prev && haversineDistanceM(prev, point) < ROUTE_MIN_POINT_DISTANCE_M) {
+      return;
+    }
+
+    const compact = compactCoordinate(point);
+    const nextCoords = [...routeCoordsRef.current, compact];
+    lastSavedPointRef.current = compact;
+
+    // 3. Giới hạn tối đa ROUTE_MAX_POINTS (200 điểm): vượt ngưỡng thì rút gọn bằng Ramer–Douglas–Peucker
+    if (nextCoords.length > ROUTE_MAX_POINTS) {
+      const reduced = downsampleRoute(nextCoords, ROUTE_DOWNSAMPLE_TARGET);
+      routeCoordsRef.current = reduced;
+      mapRef.current?.setRoute(reduced);
+    } else {
+      routeCoordsRef.current = nextCoords;
+      mapRef.current?.appendRoutePoint(compact);
+    }
+
+    // 4. Lưu nháp lộ trình định kỳ (~30s/lần, không ghi mỗi điểm) để phòng trường hợp đóng app đột ngột
+    const nowMs = Date.now();
+    if (
+      activeClientIdRef.current &&
+      nowMs - lastDraftSavedMsRef.current >= ROUTE_DRAFT_SAVE_INTERVAL_MS
+    ) {
+      lastDraftSavedMsRef.current = nowMs;
+      saveRouteDraft(
+        activeClientIdRef.current,
+        routeCoordsRef.current,
+        routeDistanceM(routeCoordsRef.current)
+      ).catch(() => {});
+    }
+  }, []);
+
   const {
     status,
     sensorStatus,
+    gpsStatus,
     metrics,
     completedRun,
     recoverableCheckpoint,
@@ -84,6 +162,7 @@ export default function RunScreen() {
     setAuthExpired,
     statusMessage,
     calibratedStrideM,
+    getActiveClientId,
     prepareSensor,
     startRun,
     pauseRun,
@@ -98,7 +177,30 @@ export default function RunScreen() {
     resetCalibrationToFormula,
     triggerManualSync,
     openSystemSettings,
-  } = useRunTracker(userProfile);
+  } = useRunTracker(userProfile, { onLocationUpdate: handleLocationUpdate });
+
+  // Đồng bộ clientId đang chạy vào ref và lưu nháp lộ trình khi ứng dụng chuyển xuống nền
+  useEffect(() => {
+    activeClientIdRef.current = getActiveClientId();
+  }, [getActiveClientId, status]);
+
+  useEffect(() => {
+    if (status !== 'running' && status !== 'paused') return undefined;
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (
+        (nextState === 'background' || nextState === 'inactive') &&
+        activeClientIdRef.current &&
+        routeCoordsRef.current.length >= 2
+      ) {
+        saveRouteDraft(
+          activeClientIdRef.current,
+          routeCoordsRef.current,
+          routeDistanceM(routeCoordsRef.current)
+        ).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, [status]);
 
   // Điều hướng nội bộ: 'tracker' | 'history' | 'detail'
   const [activeView, setActiveView] = useState('tracker');
@@ -128,6 +230,7 @@ export default function RunScreen() {
 
   // Trạng thái hiển thị bản đồ lộ trình GPS
   const [showMap, setShowMap] = useState(true);
+  const [mapInitialCoords, setMapInitialCoords] = useState([]);
 
   // Modal đăng nhập lại khi gặp lỗi 401
   const [reloginVisible, setReloginVisible] = useState(false);
@@ -164,11 +267,81 @@ export default function RunScreen() {
     [calibratedStrideM]
   );
 
+  const clearRecordedRoute = useCallback(() => {
+    routeCoordsRef.current = [];
+    lastSavedPointRef.current = null;
+    lastDraftSavedMsRef.current = 0;
+    setMapInitialCoords([]);
+    mapRef.current?.resetRoute();
+  }, []);
+
+  const handleStartRun = useCallback(async () => {
+    clearRecordedRoute();
+    setStrideSuggestion(null);
+    await startRun();
+  }, [clearRecordedRoute, startRun]);
+
+  const handleRestoreCheckpoint = useCallback(async () => {
+    const cpClientId = recoverableCheckpoint?.clientId;
+    if (cpClientId) {
+      const draft = await loadRouteDraft(cpClientId);
+      if (draft && draft.routeCoords.length > 0) {
+        routeCoordsRef.current = draft.routeCoords;
+        lastSavedPointRef.current = draft.routeCoords[draft.routeCoords.length - 1];
+        setMapInitialCoords(draft.routeCoords);
+        mapRef.current?.setRoute(draft.routeCoords);
+      } else {
+        clearRecordedRoute();
+      }
+    }
+    await restoreCheckpointSession();
+  }, [clearRecordedRoute, recoverableCheckpoint?.clientId, restoreCheckpointSession]);
+
   const handleConfirmFinish = useCallback(async () => {
     setConfirmStopVisible(false);
-    await stopRun(runNote);
+    // Đảm bảo số điểm lưu không vượt quá ROUTE_MAX_POINTS (200)
+    const finalRouteCoords = downsampleRoute(routeCoordsRef.current, ROUTE_MAX_POINTS);
+    const gpsDistanceM = Math.round(routeDistanceM(finalRouteCoords));
+
+    const saveResult = await stopRun(runNote, {
+      routeCoords: finalRouteCoords,
+      gpsDistanceM,
+    });
     setRunNote('');
-  }, [runNote, stopRun]);
+
+    const finalSteps = saveResult?.run?.steps ?? metrics.steps;
+    const suggestion = suggestStrideFromGps({
+      gpsDistanceM,
+      steps: finalSteps,
+      currentStrideM: metrics.strideM,
+    });
+    setStrideSuggestion(suggestion.shouldSuggest ? suggestion : null);
+  }, [metrics.steps, metrics.strideM, runNote, stopRun]);
+
+  const handleApplySuggestedStride = useCallback(async () => {
+    if (!strideSuggestion?.shouldSuggest) return { valid: false };
+    const res = await applyCalibration(strideSuggestion.gpsDistanceM, strideSuggestion.steps);
+    if (res.valid) {
+      setStrideSuggestion(null);
+    }
+    return res;
+  }, [applyCalibration, strideSuggestion]);
+
+  const handleDismissStrideSuggestion = useCallback(() => {
+    setStrideSuggestion(null);
+  }, []);
+
+  const handleCancelRun = useCallback(async () => {
+    clearRecordedRoute();
+    setStrideSuggestion(null);
+    await cancelRun();
+  }, [cancelRun, clearRecordedRoute]);
+
+  const handleResetToIdle = useCallback(() => {
+    clearRecordedRoute();
+    setStrideSuggestion(null);
+    resetToIdle();
+  }, [clearRecordedRoute, resetToIdle]);
 
   const handleApplyCalibration = useCallback(async () => {
     const res = await applyCalibration(Number(calDistanceInput), Number(calStepsInput));
@@ -305,9 +478,12 @@ export default function RunScreen() {
           run={completedRun}
           syncStatus={status}
           statusMessage={statusMessage}
+          strideSuggestion={strideSuggestion}
+          onApplyStrideSuggestion={handleApplySuggestedStride}
+          onDismissStrideSuggestion={handleDismissStrideSuggestion}
           onSyncNow={triggerManualSync}
           onOpenHistory={handleOpenHistory}
-          onDone={resetToIdle}
+          onDone={handleResetToIdle}
         />
       </SafeAreaView>
     );
@@ -396,7 +572,7 @@ export default function RunScreen() {
               </Text>
             </View>
             <View style={styles.inlineBannerActions}>
-              <Pressable style={styles.bannerPrimaryBtn} onPress={restoreCheckpointSession}>
+              <Pressable style={styles.bannerPrimaryBtn} onPress={handleRestoreCheckpoint}>
                 <Text style={styles.bannerPrimaryBtnText}>Tiếp tục</Text>
               </Pressable>
               <Pressable
@@ -455,11 +631,23 @@ export default function RunScreen() {
                 <Ionicons name="chevron-up-outline" size={18} color={colors.textMuted} />
               </Pressable>
             </View>
-            <RunMapView isTracking={isRunning} height={220} />
+            <RunMapView
+              ref={mapRef}
+              isTracking={isRunning}
+              gpsStatus={gpsStatus}
+              initialCoordinates={mapInitialCoords}
+              height={220}
+            />
           </View>
         ) : (
           <View style={styles.collapsedMapBar}>
-            <Pressable style={styles.showMapBtn} onPress={() => setShowMap(true)}>
+            <Pressable
+              style={styles.showMapBtn}
+              onPress={() => {
+                setMapInitialCoords([...routeCoordsRef.current]);
+                setShowMap(true);
+              }}
+            >
               <Ionicons name="map-outline" size={18} color={colors.primary} />
               <Text style={styles.showMapBtnText}>Hiện bản đồ lộ trình GPS</Text>
               <Ionicons name="chevron-down-outline" size={18} color={colors.textMuted} />
@@ -574,7 +762,7 @@ export default function RunScreen() {
           <Pressable
             accessibilityRole="button"
             style={styles.primaryStartBtn}
-            onPress={startRun}
+            onPress={handleStartRun}
           >
             <Ionicons name="play" size={20} color={colors.textOnPrimary} />
             <Text style={styles.primaryStartBtnText}>Bắt đầu chạy bộ</Text>
@@ -720,7 +908,7 @@ export default function RunScreen() {
               style={styles.discardLink}
               onPress={() => {
                 setConfirmStopVisible(false);
-                cancelRun();
+                handleCancelRun();
               }}
             >
               <Text style={styles.discardLinkText}>Hủy buổi chạy (không lưu)</Text>

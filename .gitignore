@@ -42,3 +42,12 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Archify skill & generated diagrams
+.agents/skills/archify/
+.archify/
+
+# Local documentation & artifacts
+docs/
+doc/
+

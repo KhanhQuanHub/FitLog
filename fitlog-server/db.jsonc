@@ -15,6 +15,7 @@
   "users": [
     {
       "id": 1,
+      "name": "Nguyễn Khánh Quân",
       "email": "quan@figlog.vn",
       "password": "scrypt$16384$8$1$e41493c8d5dbade46cbd2b81d3336a07$d9a51884cba8ac0fc6f2ecbb7479f27ff1c4e29426d1c026782293aee43804a5538db5c015c3d54a54385f2df95b48d1d2f80e85cca3a601c3de8b76760129db",
       "fullName": "Nguyễn Khánh Quân",
@@ -23,6 +24,7 @@
     },
     {
       "id": 2,
+      "name": "Thanh Hà",
       "email": "ha@figlog.vn",
       "password": "scrypt$16384$8$1$2c33f7523387227166aa29638d94b667$7844057333442b09a33ae8e63c8c33ad875f57bcfcf8fac8e2c58d31cfcca3a2400da28e3cbdfc62411aef2ed050bc66580e956f36d639853768085fb67ed9ce",
       "fullName": "Thanh Hà",
@@ -31,6 +33,7 @@
     },
     {
       "id": 3,
+      "name": "Quản trị viên",
       "email": "admin@figlog.vn",
       "password": "scrypt$16384$8$1$a09efb7c0bee2e03a5e17f83d4cfde83$c1e811ef6c65fec8290b64e7b05fdeeed12d7c9c367bf4b3c1e56e309e85be4170b383368892adec5430cb0858418bc8d9c2c00f16872bd6c9002cfdd0d97be2",
       "fullName": "Quản trị viên",

@@ -12,6 +12,7 @@
 
 import * as SecureStore from 'expo-secure-store';
 import { API_TIMEOUT_MS, BASE_URL, getBaseUrl, getBaseUrlAsync } from './config';
+import { setStatisticsIdentity } from './statisticsSession';
 
 export { BASE_URL, getBaseUrl, getBaseUrlAsync };
 
@@ -160,6 +161,7 @@ export async function getAuthToken() {
     if (available) {
       const stored = await SecureStore.getItemAsync(TOKEN_STORAGE_KEY);
       memoryToken = stored || null;
+      setStatisticsIdentity(decodeTokenPayload(memoryToken)?.id ?? null);
       return memoryToken;
     }
   } catch {
@@ -176,6 +178,7 @@ export async function getAuthToken() {
  */
 export async function setAuthToken(token) {
   memoryToken = token || null;
+  setStatisticsIdentity(decodeTokenPayload(memoryToken)?.id ?? null);
   try {
     const available = await SecureStore.isAvailableAsync();
     if (!available) return;
@@ -214,25 +217,25 @@ export async function clearAuthToken() {
  * @returns {Promise<any>}
  */
 export async function request(path, options = {}) {
+  const isPublicAuthRequest =
+    options.skipAuth === true ||
+    path === '/login' ||
+    (path === '/users' && options.method === 'POST');
+
+  const token = isPublicAuthRequest ? null : await getAuthToken();
+  const headers = {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(options.headers || {}),
+  };
+
+  const currentBaseUrl = await getBaseUrlAsync();
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
   }, options.timeoutMs || API_TIMEOUT_MS);
 
   try {
-    const isPublicAuthRequest =
-      options.skipAuth === true ||
-      path === '/login' ||
-      (path === '/users' && options.method === 'POST');
-
-    const token = isPublicAuthRequest ? null : await getAuthToken();
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    };
-
-    const currentBaseUrl = await getBaseUrlAsync();
     const response = await fetch(`${currentBaseUrl}${path}`, {
       ...options,
       headers,
@@ -312,14 +315,14 @@ export async function request(path, options = {}) {
       err && typeof err === 'object' && 'name' in err ? /** @type {any} */ (err).name : '';
     if (errName === 'AbortError') {
       throw new ApiError(
-        'Hết thời gian chờ phản hồi từ máy chủ (quá 10 giây).',
+        `Hết thời gian chờ phản hồi từ máy chủ (${currentBaseUrl}, quá 10 giây). Kiểm tra lại IP laptop hoặc Firewall.`,
         408,
         null,
         'TIMEOUT'
       );
     }
     throw new ApiError(
-      'Không thể kết nối máy chủ. Vui lòng kiểm tra mạng Wi-Fi/4G và thử lại.',
+      `Không thể kết nối máy chủ (${currentBaseUrl}). Hãy kiểm tra hai máy chung Wi-Fi, đã chạy json-server và mở Firewall cổng 3000.`,
       0,
       null,
       'NETWORK'
@@ -330,10 +333,56 @@ export async function request(path, options = {}) {
 }
 
 /**
- * Đăng nhập thật qua POST /login:
- * - Gửi: { email: string (đã cắt khoảng trắng & chữ thường), password: string }
- * - Nhận: { token: string, user: { id, email, fullName, role } }
- * - Lưu token vào expo-secure-store.
+ * Tạo token giả định dạng <base64url>.demo khi chạy json-server thuần (không qua auth.js)
+ * để `decodeTokenPayload()` và `verifyStoredSession()` hoạt động đồng nhất.
+ *
+ * @param {Record<string, any>} user
+ * @returns {string}
+ */
+function buildFallbackDemoToken(user) {
+  const payloadJson = JSON.stringify({
+    id: user?.id ?? 1,
+    role: user?.role || 'user',
+    exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
+  });
+
+  const globalBuffer = /** @type {any} */ (globalThis).Buffer;
+  if (typeof globalBuffer !== 'undefined' && typeof globalBuffer.from === 'function') {
+    return `${globalBuffer.from(payloadJson, 'utf8').toString('base64url')}.demo`;
+  }
+
+  const utf8Bytes = encodeURIComponent(payloadJson).replace(
+    /%([0-9A-F]{2})/g,
+    (_m, hex) => String.fromCharCode(parseInt(hex, 16))
+  );
+
+  if (typeof globalThis.btoa === 'function') {
+    const b64 = globalThis.btoa(utf8Bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `${b64}.demo`;
+  }
+
+  let out = '';
+  for (let i = 0; i < utf8Bytes.length; i += 3) {
+    const c1 = utf8Bytes.charCodeAt(i);
+    const has2 = i + 1 < utf8Bytes.length;
+    const has3 = i + 2 < utf8Bytes.length;
+    const c2 = has2 ? utf8Bytes.charCodeAt(i + 1) : 0;
+    const c3 = has3 ? utf8Bytes.charCodeAt(i + 2) : 0;
+
+    out += BASE64_CHARS.charAt(c1 >> 2);
+    out += BASE64_CHARS.charAt(((c1 & 3) << 4) | (c2 >> 4));
+    if (has2) out += BASE64_CHARS.charAt(((c2 & 15) << 2) | (c3 >> 6));
+    if (has3) out += BASE64_CHARS.charAt(c3 & 63);
+  }
+  return `${out.replace(/\+/g, '-').replace(/\//g, '_')}.demo`;
+}
+
+/**
+ * Đăng nhập qua json-server:
+ * - Gọi `GET {BASE_URL}/users?email=...&password=...` (timeout 10s bằng AbortController).
+ * - Nếu mảng trả về có phần tử: lấy thông tin user + token (token thật từ auth.js hoặc
+ *   token giả định dạng chuẩn khi chạy json-server thuần), lưu vào expo-secure-store.
+ * - Nếu mảng rỗng: báo lỗi "Email hoặc mật khẩu không đúng" bằng tiếng Việt.
  *
  * @param {string} email
  * @param {string} password
@@ -341,16 +390,32 @@ export async function request(path, options = {}) {
  */
 export async function login(email, password) {
   const cleanEmail = String(email || '').trim().toLowerCase();
-  const result = await request('/login', {
-    method: 'POST',
-    body: JSON.stringify({ email: cleanEmail, password }),
+  const queryPath = `/users?email=${encodeURIComponent(cleanEmail)}&password=${encodeURIComponent(
+    String(password || '')
+  )}`;
+
+  const matchedList = await request(queryPath, {
+    method: 'GET',
+    skipAuth: true,
   });
 
-  if (result && result.token) {
-    await setAuthToken(result.token);
-    return result.user ? { ...result.user } : result;
+  if (!Array.isArray(matchedList) || matchedList.length === 0) {
+    throw new ApiError('Email hoặc mật khẩu không đúng', 401, null, 'AUTH');
   }
-  return null;
+
+  const rawUser = matchedList[0];
+  const token =
+    typeof rawUser?.token === 'string' && rawUser.token.trim() !== ''
+      ? rawUser.token
+      : buildFallbackDemoToken(rawUser);
+
+  await setAuthToken(token);
+
+  const { password: _removedPassword, token: _removedToken, ...safeUser } = rawUser || {};
+  return {
+    ...safeUser,
+    fullName: safeUser.fullName || safeUser.name || 'Người dùng FitLog',
+  };
 }
 
 export async function requestPasswordReset(email) {
@@ -650,4 +715,44 @@ export function updateProfileCalibratedStride(profileId, calibratedStrideM) {
     method: 'PATCH',
     body: JSON.stringify({ calibratedStrideM }),
   });
+}
+
+/**
+ * Lấy toàn bộ danh sách các buổi tập theo lịch kèm thông tin bài tập (`_expand=exercise`),
+ * sắp xếp từ ngày mới nhất đến cũ nhất để phục vụ tính toán thống kê.
+ *
+ * @returns {Promise<Array<object>>} Danh sách buổi tập từ bảng `workouts`
+ */
+export function getAllWorkouts() {
+  return request('/workouts?_expand=exercise&_sort=date&_order=desc');
+}
+
+/**
+ * Lấy toàn bộ danh sách các buổi chạy bộ từ bảng `runs`, sắp xếp từ ngày mới nhất
+ * đến cũ nhất để phục vụ tính toán thống kê.
+ *
+ * @returns {Promise<Array<object>>} Danh sách buổi chạy từ bảng `runs`
+ */
+export function getAllRuns() {
+  return request('/runs?_sort=date&_order=desc');
+}
+
+/**
+ * Lấy danh sách mục tiêu cá nhân kèm chi tiết tên mục tiêu (`_expand=goal`)
+ * từ bảng `userGoals` để đối chiếu tiến độ tuần.
+ *
+ * @returns {Promise<Array<object>>} Danh sách mục tiêu từ bảng `userGoals`
+ */
+export function getUserGoals() {
+  return request('/userGoals?_expand=goal');
+}
+
+/**
+ * Lấy toàn bộ lịch sử cân nặng từ bảng `weightHistory`, sắp xếp tăng dần theo ngày
+ * để vẽ biểu đồ diễn biến cân nặng và tính BMI.
+ *
+ * @returns {Promise<Array<object>>} Danh sách các lần cân từ bảng `weightHistory`
+ */
+export function getWeightHistory() {
+  return request('/weightHistory?_sort=date&_order=asc');
 }

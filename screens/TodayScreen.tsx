@@ -1,9 +1,7 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
-import type { RootStackParamList } from '../navigation/RootNavigator';
 import { fontSize, fontWeight, layout, radius, spacing } from '../constants/theme';
 import { answerSummary, recommendTraining } from '../domain/training';
 import { useTraining } from '../store/TrainingContext';
@@ -12,12 +10,21 @@ import BodyMap from '../components/training/BodyMap';
 import ExerciseList from '../components/training/ExerciseList';
 import Button from '../components/ui/Button';
 import TrainingDetails from '../components/training/TrainingDetails';
+import TrainingSetupScreen from './TrainingSetupScreen';
 
 export default function TodayScreen() {
   const { colors } = useTheme();
   const { setup } = useTraining();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  if (!setup) return null;
+  const [editingSetup, setEditingSetup] = useState(false);
+  if (!setup || editingSetup) {
+    const mode = setup ? 'EditTraining' : 'Onboarding';
+    return (
+      <TrainingSetupScreen
+        navigation={{ goBack: () => setEditingSetup(false) } as never}
+        route={{ key: mode, name: mode } as never}
+      />
+    );
+  }
   const plan = recommendTraining(setup);
   return <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -36,7 +43,7 @@ export default function TodayScreen() {
           </View>
         </View>
         <BodyMap selected={setup.muscles} emphasized={plan.priorityMuscles} compact />
-        <Button title="Điều chỉnh" accessibilityLabel="Thay đổi chỉ số & vùng tập" variant="secondary" onPress={() => navigation.navigate('EditTraining')} icon="options-outline" />
+        <Button title="Điều chỉnh" accessibilityLabel="Thay đổi chỉ số & vùng tập" variant="secondary" onPress={() => setEditingSetup(true)} icon="options-outline" />
         <Text style={[styles.planTitle, { color: colors.text }]}>{plan.exercises.length} bài gợi ý</Text>
         <ExerciseList setup={setup} />
         <TrainingDetails setup={setup} />

@@ -6,13 +6,15 @@
 //   3. Còn lại                -> bắt buộc có token (header Authorization)
 //   4. Kiểm tra quyền theo vai trò (admin / user)
 //   5. Với POST/PATCH/PUT /runs -> kiểm tra idempotent theo clientId & validate 422
-// CẢNH BÁO: bản HỌC TẬP / DEMO. App thật phải băm mật khẩu (bcrypt), dùng HTTPS.
+// Đây là server demo; production cần HTTPS và cấu hình FIGLOG_SECRET riêng.
 // ================================================================
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
 const { validateRunPayload } = require('./validate');
+const { hashPassword, migrateUsers, verifyPassword } = require('./passwords');
+const emailService = require('./email');
 
 function getLocalIpv4Addresses() {
     const interfaces = os.networkInterfaces();
@@ -33,6 +35,10 @@ function getLocalIpv4Addresses() {
 const SECRET = process.env.FIGLOG_SECRET || 'doi-chuoi-bi-mat-nay-truoc-khi-nop-bai';
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // token sống 7 ngày
 const DB_FILE = path.join(__dirname, 'db.json');
+const PASSWORD_RESET_WINDOW_MS = 15 * 60 * 1000;
+const PASSWORD_RESET_MAX_REQUESTS = 5;
+const PASSWORD_RESET_MESSAGE = 'Nếu email đã đăng ký, mật khẩu mới sẽ được gửi đến hộp thư của bạn.';
+const passwordResetRequests = new Map();
 
 // ---------- BẢNG PHÂN QUYỀN ----------
 const OWNED = ['profiles', 'weightHistory', 'userGoals', 'workouts', 'runs']; // có cột userId
@@ -40,6 +46,17 @@ const PUBLIC_READ = ['goals', 'exercises']; // ai cũng đọc được, chỉ a
 
 // ---------- HÀM PHỤ ----------
 const readDb = () => JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+
+function migrateRequestDb(req) {
+    const db = getDbState(req);
+    if (!migrateUsers(db.users)) return;
+
+    if (req.app && req.app.db && typeof req.app.db.write === 'function') {
+        req.app.db.write();
+    } else {
+        fs.writeFileSync(DB_FILE, `${JSON.stringify(db, null, 2)}\n`);
+    }
+}
 
 // Ưu tiên đọc từ bộ nhớ lowdb của json-server (req.app.db) để đảm bảo nhất quán tức thời
 // ngay cả khi 2 request gửi liên tiếp trước khi steno kịp ghi xuống đĩa.
@@ -85,6 +102,127 @@ const strip = (d) =>
             : d;
 
 const deny = (res, code, message) => res.status(code).json({ error: message });
+
+function consumePasswordResetRequest(ip, now = Date.now()) {
+    for (const [requestIp, timestamps] of passwordResetRequests) {
+        const activeRequests = timestamps.filter((timestamp) => now - timestamp < PASSWORD_RESET_WINDOW_MS);
+        if (activeRequests.length) passwordResetRequests.set(requestIp, activeRequests);
+        else passwordResetRequests.delete(requestIp);
+    }
+    const requests = (passwordResetRequests.get(ip) || [])
+        .filter((timestamp) => now - timestamp < PASSWORD_RESET_WINDOW_MS);
+    if (requests.length >= PASSWORD_RESET_MAX_REQUESTS) {
+        passwordResetRequests.set(ip, requests);
+        return false;
+    }
+    requests.push(now);
+    passwordResetRequests.set(ip, requests);
+    return true;
+}
+
+async function persistDatabase(req, db) {
+    if (req.app && req.app.db && typeof req.app.db.write === 'function') {
+        await req.app.db.write();
+        return;
+    }
+    fs.writeFileSync(DB_FILE, `${JSON.stringify(db, null, 2)}\n`);
+}
+
+async function handleChangePassword(req, res, payload) {
+    if (!payload) return deny(res, 401, 'Vui lòng đăng nhập để đổi mật khẩu');
+
+    const { currentPassword, newPassword, confirmPassword } = req.body || {};
+    if (typeof currentPassword !== 'string' || !currentPassword
+        || typeof newPassword !== 'string' || !newPassword
+        || typeof confirmPassword !== 'string' || !confirmPassword) {
+        return deny(res, 400, 'Vui lòng nhập đầy đủ các trường mật khẩu');
+    }
+    if (newPassword.length < 8) {
+        return deny(res, 400, 'Mật khẩu phải có ít nhất 8 ký tự');
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ hoa');
+    }
+    if (!/[a-z]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ thường');
+    }
+    if (!/[0-9]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ số');
+    }
+    if (newPassword !== confirmPassword) {
+        return deny(res, 400, 'Mật khẩu nhập lại không khớp');
+    }
+    if (newPassword === currentPassword) {
+        return deny(res, 400, 'Mật khẩu mới phải khác mật khẩu hiện tại');
+    }
+
+    const db = getDbState(req);
+    const user = db.users.find((item) => String(item.id) === String(payload.id));
+    if (!user || !verifyPassword(currentPassword, user.password)) {
+        return deny(res, 401, 'Mật khẩu hiện tại không đúng');
+    }
+
+    const previousPasswordHash = user.password;
+    user.password = hashPassword(newPassword);
+    try {
+        await persistDatabase(req, db);
+    } catch {
+        user.password = previousPasswordHash;
+        return deny(res, 500, 'Không thể cập nhật mật khẩu. Vui lòng thử lại sau.');
+    }
+    return res.json({ message: 'Đổi mật khẩu thành công' });
+}
+
+async function handlePasswordReset(req, res) {
+    const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        return deny(res, 400, 'Vui lòng nhập email hợp lệ');
+    }
+
+    if (!consumePasswordResetRequest(req.ip || req.socket.remoteAddress || 'unknown')) {
+        res.set('Retry-After', String(Math.ceil(PASSWORD_RESET_WINDOW_MS / 1000)));
+        return deny(res, 429, 'Bạn đã yêu cầu quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+    }
+
+    if (!emailService.isEmailConfigured()) {
+        return deny(res, 503, 'Dịch vụ email chưa được cấu hình. Vui lòng liên hệ quản trị viên.');
+    }
+
+    const db = getDbState(req);
+    const user = db.users.find((item) => String(item.email).trim().toLowerCase() === email);
+    if (!user) return res.json({ message: PASSWORD_RESET_MESSAGE });
+
+    const temporaryPassword = crypto.randomBytes(9).toString('base64url');
+    const previousPasswordHash = user.password;
+    user.password = hashPassword(temporaryPassword);
+
+    try {
+        await persistDatabase(req, db);
+    } catch {
+        user.password = previousPasswordHash;
+        return deny(res, 500, 'Không thể cập nhật mật khẩu. Vui lòng thử lại sau.');
+    }
+
+    try {
+        await emailService.sendPasswordResetEmail(email, temporaryPassword);
+    } catch (error) {
+        console.error('Password reset email delivery failed:', {
+            code: error && typeof error === 'object' ? error.code : undefined,
+            command: error && typeof error === 'object' ? error.command : undefined,
+            responseCode: error && typeof error === 'object' ? error.responseCode : undefined,
+        });
+        user.password = previousPasswordHash;
+        try {
+            await persistDatabase(req, db);
+        } catch {
+            console.error('Không thể khôi phục mật khẩu sau khi gửi email thất bại.');
+            return deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng liên hệ quản trị viên.');
+        }
+        return deny(res, 503, 'Không thể gửi email lúc này. Vui lòng thử lại sau.');
+    }
+
+    return res.json({ message: PASSWORD_RESET_MESSAGE });
+}
 
 /**
  * Xử lý kiểm tra idempotent (chống ghi trùng theo clientId + userId)
@@ -145,12 +283,24 @@ function handleRunsValidationAndIdempotency(req, res, id, effectiveUserId) {
 
 // ---------- MIDDLEWARE CHÍNH ----------
 module.exports = (req, res, next) => {
+    migrateRequestDb(req);
+
     // Mọi dữ liệu json-server trả về đều đi qua res.jsonp -> chặn để xóa password
     const originalJsonp = res.jsonp.bind(res);
     res.jsonp = (data) => originalJsonp(strip(data));
 
     if (req.method === 'OPTIONS') return next(); // preflight CORS
 
+    if (req.method === 'POST' && req.path === '/password-reset') {
+        return handlePasswordReset(req, res).catch(() =>
+            deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.')
+        );
+    }
+    if (req.method === 'POST' && req.path === '/change-password') {
+        const payload = verifyToken((req.headers.authorization || '').replace('Bearer ', ''));
+        return handleChangePassword(req, res, payload).catch(() =>
+            deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.')
+        );
     // ----- 0. NHẬN DIỆN MÁY CHỦ TRONG MẠNG LAN (KHÔNG CẦN TOKEN) -----
     if (req.method === 'GET' && req.path === '/__fitlog_ping') {
         return res.json({
@@ -168,6 +318,10 @@ module.exports = (req, res, next) => {
     // ----- 1. ĐĂNG NHẬP: POST /login  body {email, password} -----
     if (method === 'POST' && req.path === '/login') {
         const { email, password } = req.body || {};
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : '';
+        const user = getDbState(req).users.find(
+            (u) => String(u.email).trim().toLowerCase() === normalizedEmail
+                && verifyPassword(password, u.password)
         const cleanEmail = String(email || '').trim().toLowerCase();
         const user = getDbState(req).users.find(
             (u) => String(u.email || '').trim().toLowerCase() === cleanEmail && u.password === password
@@ -207,6 +361,18 @@ module.exports = (req, res, next) => {
     // ----- 2. ĐĂNG KÝ CÔNG KHAI: POST /users (chưa cần token) -----
     if (method === 'POST' && resource === 'users' && !id && !payload) {
         const body = req.body || {};
+        if (typeof body.email !== 'string' || !body.email.trim()
+            || typeof body.password !== 'string' || !body.password) {
+            return deny(res, 400, 'Thiếu email hoặc mật khẩu');
+        }
+        const email = body.email.trim().toLowerCase();
+        if (getDbState(req).users.some((u) => String(u.email).trim().toLowerCase() === email)) {
+            return deny(res, 409, 'Email đã tồn tại');
+        }
+        req.body = {
+            email,
+            password: hashPassword(body.password),
+            fullName: body.fullName || '',
         if (!body.email || !body.password) return deny(res, 400, 'Thiếu email hoặc mật khẩu');
         if (getDbState(req).users.some((u) => u.email === body.email)) return deny(res, 409, 'Email đã tồn tại');
         const displayName = body.fullName || body.name || '';
@@ -229,6 +395,17 @@ module.exports = (req, res, next) => {
 
     // ----- 5. ADMIN: toàn quyền (nhưng vẫn kiểm tra dữ liệu /runs nếu POST/PATCH) -----
     if (payload.role === 'admin') {
+        if (resource === 'users' && ['POST', 'PATCH', 'PUT'].includes(method)) {
+            const hasPassword = req.body
+                && Object.prototype.hasOwnProperty.call(req.body, 'password');
+            if ((method === 'POST' || method === 'PUT') && !hasPassword) {
+                return deny(res, 400, 'Thiếu mật khẩu');
+            }
+            if (hasPassword && (typeof req.body.password !== 'string' || !req.body.password)) {
+                return deny(res, 400, 'Mật khẩu không hợp lệ');
+            }
+            if (hasPassword) req.body = { ...req.body, password: hashPassword(req.body.password) };
+        }
         if (resource === 'runs' && parts.length <= 2) {
             const adminTargetUserId = req.body && req.body.userId ? req.body.userId : payload.id;
             if (method === 'POST' && !id) {
@@ -285,6 +462,9 @@ module.exports = (req, res, next) => {
         if (method === 'GET') return next();
         if (method === 'PATCH') {
             const { role, id: _ignoreId, ...allowed } = req.body || {}; // loại role, id
+            if (Object.prototype.hasOwnProperty.call(allowed, 'password')) {
+                return deny(res, 400, 'Hãy dùng chức năng đổi mật khẩu để xác minh mật khẩu hiện tại');
+            }
             req.body = allowed;
             return next();
         }

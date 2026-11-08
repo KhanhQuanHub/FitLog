@@ -8,6 +8,13 @@
 
 import { useEffect } from 'react';
 import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import LoginScreen from '../screens/auth/LoginScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
+import MainTabs from './MainTabs';
 import { Stack } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
@@ -18,6 +25,7 @@ export type RootStackParamList = {
   Register: undefined;
   ForgotPassword: undefined;
   Main: undefined;
+  ChangePassword: undefined;
   Onboarding: undefined;
   EditTraining: undefined;
 };
@@ -57,6 +65,22 @@ export default function RootNavigator() {
         animation: 'fade',
       }}
     >
+      {!isLoggedIn ? (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+        </>
+      ) : !setup ? (
+        <Stack.Screen name="Onboarding" component={TrainingSetupScreen} />
+      ) : (
+        <>
+          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+          <Stack.Screen name="EditTraining" component={TrainingSetupScreen} />
+        </>
+      )}
+    </Stack.Navigator>
       <Stack.Protected guard={!isLoggedIn}>
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />

@@ -258,6 +258,17 @@ export async function request(path, options = {}) {
         // Dùng chung một thông báo, không tiết lộ email có tồn tại hay không
         throw new ApiError('Email hoặc mật khẩu không đúng', 401, payload, 'AUTH');
       }
+      if (path === '/change-password') {
+        throw new ApiError(payload?.error || 'Mật khẩu hiện tại không đúng', 401, payload, 'AUTH');
+      }
+      if (isPublicAuthRequest) {
+        throw new ApiError(
+          payload?.error || `Yêu cầu không hợp lệ (${response.status})`,
+          401,
+          payload,
+          'AUTH'
+        );
+      }
       await clearAuthToken();
       notifyUnauthorized();
       throw new ApiError(
@@ -281,7 +292,9 @@ export async function request(path, options = {}) {
     // Xử lý lỗi máy chủ 5xx
     if (response.status >= 500) {
       throw new ApiError(
-        'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
+        path === '/password-reset' && typeof payload?.error === 'string'
+          ? payload.error
+          : 'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
         response.status,
         payload,
         'SERVER'
@@ -403,6 +416,22 @@ export async function login(email, password) {
     ...safeUser,
     fullName: safeUser.fullName || safeUser.name || 'Người dùng FitLog',
   };
+}
+
+export async function requestPasswordReset(email) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  return request('/password-reset', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ email: cleanEmail }),
+  });
+}
+
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
+  return request('/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
 }
 
 /**

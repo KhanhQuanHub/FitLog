@@ -139,7 +139,6 @@ export default function ProfileScreen() {
           {reminderError && <Text accessibilityRole="alert" style={[styles.small, { color: colors.danger }]}>{reminderError}</Text>}
         </View>
         <Text style={[styles.small, { color: colors.textMuted }]}>Gợi ý tham khảo, không thay thế tư vấn y tế.</Text>
-        <Button title="Đổi mật khẩu" variant="secondary" icon="lock-closed-outline" onPress={() => navigation.navigate('ChangePassword')} />
         <Button title="Đăng xuất" variant="danger" icon="log-out-outline" onPress={() => setLogoutVisible(true)} />
       </View>
     </ScrollView>

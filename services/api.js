@@ -357,6 +357,13 @@ export async function requestPasswordReset(email) {
   });
 }
 
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
+  return request('/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
+}
+
 /**
  * Đăng ký tài khoản mới qua POST /users rồi tự động đăng nhập để nhận token.
  * Hỗ trợ cả 2 trường hợp:

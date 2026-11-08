@@ -29,7 +29,7 @@
     },
     {
       "email": "nguyenkhanhquan9999@gmail.com",
-      "password": "scrypt$16384$8$1$9d9a742cfa2ebfc3d707978ec7ec2cfc$3747bb563672913d0bb00ba77da1858ee40d40bbf60edfecde267882c1d4a8711de8b3faffbe3005aa06d2708b79f4e83220387dffe6bdd717ec2ac976545645",
+      "password": "scrypt$16384$8$1$d7e66964013eb20367c9bffae9cd9a57$5fcb9d68a750336b18ca3ab6a95b78d7eccf236f01d52f436beb009ac3b4afcf1a091eeb3171f1b6b5a96b145acc445aa69a5fa107263ea5a21c68a9e6233d1d",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T13:10:40.096Z",
@@ -825,6 +825,18 @@
       "note": "",
       "userId": 7,
       "id": 14
+    },
+    {
+      "exerciseId": 1,
+      "date": "2026-11-08",
+      "time": "15:21",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "",
+      "userId": 4,
+      "id": 15
     }
   ],
   "runs": [

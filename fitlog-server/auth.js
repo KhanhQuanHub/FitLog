@@ -115,6 +115,51 @@ async function persistDatabase(req, db) {
     fs.writeFileSync(DB_FILE, `${JSON.stringify(db, null, 2)}\n`);
 }
 
+async function handleChangePassword(req, res, payload) {
+    if (!payload) return deny(res, 401, 'Vui lòng đăng nhập để đổi mật khẩu');
+
+    const { currentPassword, newPassword, confirmPassword } = req.body || {};
+    if (typeof currentPassword !== 'string' || !currentPassword
+        || typeof newPassword !== 'string' || !newPassword
+        || typeof confirmPassword !== 'string' || !confirmPassword) {
+        return deny(res, 400, 'Vui lòng nhập đầy đủ các trường mật khẩu');
+    }
+    if (newPassword.length < 8) {
+        return deny(res, 400, 'Mật khẩu phải có ít nhất 8 ký tự');
+    }
+    if (!/[A-Z]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ hoa');
+    }
+    if (!/[a-z]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ thường');
+    }
+    if (!/[0-9]/.test(newPassword)) {
+        return deny(res, 400, 'Mật khẩu cần có ít nhất 1 chữ số');
+    }
+    if (newPassword !== confirmPassword) {
+        return deny(res, 400, 'Mật khẩu nhập lại không khớp');
+    }
+    if (newPassword === currentPassword) {
+        return deny(res, 400, 'Mật khẩu mới phải khác mật khẩu hiện tại');
+    }
+
+    const db = getDbState(req);
+    const user = (db.users || []).find((item) => String(item.id) === String(payload.id));
+    if (!user || !verifyPassword(currentPassword, user.password)) {
+        return deny(res, 400, 'Mật khẩu hiện tại không đúng');
+    }
+
+    const previousPasswordHash = user.password;
+    user.password = hashPassword(newPassword);
+    try {
+        await persistDatabase(req, db);
+    } catch {
+        user.password = previousPasswordHash;
+        return deny(res, 500, 'Không thể cập nhật mật khẩu. Vui lòng thử lại sau.');
+    }
+    return res.json({ message: 'Đổi mật khẩu thành công' });
+}
+
 async function handlePasswordReset(req, res) {
     const email = typeof req.body?.email === 'string'
         ? req.body.email.trim().toLowerCase()
@@ -239,6 +284,12 @@ module.exports = (req, res, next) => {
 
     if (req.method === 'POST' && req.path === '/password-reset') {
         return handlePasswordReset(req, res).catch(() =>
+            deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.')
+        );
+    }
+    if (req.method === 'POST' && req.path === '/change-password') {
+        const payload = verifyToken((req.headers.authorization || '').replace('Bearer ', ''));
+        return handleChangePassword(req, res, payload).catch(() =>
             deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.')
         );
     }
@@ -379,7 +430,7 @@ module.exports = (req, res, next) => {
         if (method === 'PATCH') {
             const { role, id: _ignoreId, ...allowed } = req.body || {}; // loại role, id
             if (Object.prototype.hasOwnProperty.call(allowed, 'password')) {
-                return deny(res, 400, 'Không thể cập nhật mật khẩu tại đây');
+                return deny(res, 400, 'Hãy dùng chức năng đổi mật khẩu để xác minh mật khẩu hiện tại');
             }
             req.body = allowed;
             return next();

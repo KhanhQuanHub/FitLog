@@ -255,6 +255,9 @@ export async function request(path, options = {}) {
         // Dùng chung một thông báo, không tiết lộ email có tồn tại hay không
         throw new ApiError('Email hoặc mật khẩu không đúng', 401, payload, 'AUTH');
       }
+      if (path === '/change-password') {
+        throw new ApiError(payload?.error || 'Mật khẩu hiện tại không đúng', 401, payload, 'AUTH');
+      }
       if (isPublicAuthRequest) {
         throw new ApiError(
           payload?.error || `Yêu cầu không hợp lệ (${response.status})`,
@@ -356,6 +359,13 @@ export async function requestPasswordReset(email) {
     method: 'POST',
     skipAuth: true,
     body: JSON.stringify({ email: cleanEmail }),
+  });
+}
+
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
+  return request('/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
   });
 }
 

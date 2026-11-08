@@ -50,7 +50,7 @@
     },
     {
       "email": "sitran@gmail.com",
-      "password": "scrypt$16384$8$1$a8c945a8ab162a29a6c90119839996dd$908db9d62312c5fc7337e5d5980c1c9c6731d1f8412e3b9814058e0e343bccb521291176155200839ade24ce1f8388bec66f8be6109e2f25018a428017c98282",
+      "password": "scrypt$16384$8$1$1ca87e55db2d1b3c888c649746eca4ed$546aaa5730e6dd8bc605fbb8873aecbb8591dbe98f58b4d8ecbc1a07477acab87de2ec2a18302ab3b353ffa7ee4831f68105a3ed6032bbe0be8a2d50d80184e0",
       "fullName": "Trần Đình Sĩ",
       "role": "user",
       "createdAt": "2026-11-07T07:17:46.580Z",

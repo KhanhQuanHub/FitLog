@@ -147,23 +147,77 @@ async function runAllTests() {
                 method: 'POST',
                 body: { email: 'newuser@figlog.vn', password: '123456' },
             });
-            const changed = await apiCall(`/users/${res.data.id}`, {
-                method: 'PATCH',
+            const unauthenticated = await apiCall('/change-password', {
+                method: 'POST',
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
+            });
+            assert.strictEqual(unauthenticated.status, 401);
+
+            const wrongCurrent = await apiCall('/change-password', {
+                method: 'POST',
                 token: login.data.token,
-                body: { password: 'new-password' },
+                body: {
+                    currentPassword: 'wrong-current',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
+            });
+            assert.strictEqual(wrongCurrent.status, 401);
+
+            const weakPassword = await apiCall('/change-password', {
+                method: 'POST',
+                token: login.data.token,
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'weakpass',
+                    confirmPassword: 'weakpass',
+                },
+            });
+            assert.strictEqual(weakPassword.status, 400);
+
+            const mismatchedPassword = await apiCall('/change-password', {
+                method: 'POST',
+                token: login.data.token,
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass3',
+                },
+            });
+            assert.strictEqual(mismatchedPassword.status, 400);
+
+            const changed = await apiCall('/change-password', {
+                method: 'POST',
+                token: login.data.token,
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
             });
             assert.strictEqual(changed.status, 200);
-            assert.strictEqual(changed.data.password, undefined);
             const changedPassword = app.db.getState().users.find(
                 (user) => user.email === 'newuser@figlog.vn'
             ).password;
             assert.ok(isPasswordHash(changedPassword));
-            assert.ok(verifyPassword('new-password', changedPassword));
+            assert.ok(verifyPassword('StrongPass2', changedPassword));
             const relogin = await apiCall('/login', {
                 method: 'POST',
-                body: { email: 'newuser@figlog.vn', password: 'new-password' },
+                body: { email: 'newuser@figlog.vn', password: 'StrongPass2' },
             });
             assert.strictEqual(relogin.status, 200);
+
+            const insecurePatch = await apiCall(`/users/${res.data.id}`, {
+                method: 'PATCH',
+                token: relogin.data.token,
+                body: { password: 'BypassPass3' },
+            });
+            assert.strictEqual(insecurePatch.status, 400);
+            assert.ok(verifyPassword('StrongPass2', changedPassword));
         });
 
         await testCase(5, 'POST /users thiếu email hoặc mật khẩu trả về 400', async () => {

@@ -1,0 +1,30 @@
+{
+  "passed": [
+    "Đăng nhập qua form thật với API giả lập",
+    "Trang tóm tắt có dữ liệu thật từ tầng đọc, bố cục mobile 390px",
+    "Thẻ → Tiến độ mục tiêu → quay lại tóm tắt",
+    "Thẻ → Calo luyện tập → quay lại tóm tắt",
+    "Thẻ → Chạy bộ → quay lại tóm tắt",
+    "Thẻ → Lịch tập và mức độ hoàn thành → quay lại tóm tắt",
+    "Thẻ → Cân nặng và BMI → quay lại tóm tắt",
+    "Thẻ → Thói quen luyện tập → quay lại tóm tắt",
+    "Thẻ → Thời gian luyện tập → quay lại tóm tắt",
+    "Danh mục → Thời gian luyện tập → quay lại danh mục",
+    "Danh mục → Calo luyện tập → quay lại danh mục",
+    "Danh mục → Chạy bộ → quay lại danh mục",
+    "Danh mục → Lịch tập và mức độ hoàn thành → quay lại danh mục",
+    "Danh mục → Cân nặng và BMI → quay lại danh mục",
+    "Danh mục → Tiến độ mục tiêu → quay lại danh mục",
+    "Danh mục → Thói quen luyện tập → quay lại danh mục",
+    "Theme tối phản hồi theo hệ thống, không đổi route",
+    "Offline + queue có chủ, đồng bộ lại không tăng trùng tổng",
+    "HTTP 401 chuyển về đăng nhập; quay lại không phục hồi thống kê riêng tư",
+    "Không có exception runtime hoặc API ghi dữ liệu thống kê"
+  ],
+  "errors": [],
+  "viewports": [
+    "320x740",
+    "390x844"
+  ],
+  "backend": "fetch fixture, no real server"
+}

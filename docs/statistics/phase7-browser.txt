@@ -1,0 +1,25 @@
+
+> fitlog@1.0.0 test:statistics:browser
+> node test-support/statistics-browser-smoke.mjs
+
+PASS Đăng nhập qua form thật với API giả lập
+PASS Trang tóm tắt có dữ liệu thật từ tầng đọc, bố cục mobile 390px
+PASS Thẻ → Tiến độ mục tiêu → quay lại tóm tắt
+PASS Thẻ → Calo luyện tập → quay lại tóm tắt
+PASS Thẻ → Chạy bộ → quay lại tóm tắt
+PASS Thẻ → Lịch tập và mức độ hoàn thành → quay lại tóm tắt
+PASS Thẻ → Cân nặng và BMI → quay lại tóm tắt
+PASS Thẻ → Thói quen luyện tập → quay lại tóm tắt
+PASS Thẻ → Thời gian luyện tập → quay lại tóm tắt
+PASS Danh mục → Thời gian luyện tập → quay lại danh mục
+PASS Danh mục → Calo luyện tập → quay lại danh mục
+PASS Danh mục → Chạy bộ → quay lại danh mục
+PASS Danh mục → Lịch tập và mức độ hoàn thành → quay lại danh mục
+PASS Danh mục → Cân nặng và BMI → quay lại danh mục
+PASS Danh mục → Tiến độ mục tiêu → quay lại danh mục
+PASS Danh mục → Thói quen luyện tập → quay lại danh mục
+PASS Theme tối phản hồi theo hệ thống, không đổi route
+PASS Offline + queue có chủ, đồng bộ lại không tăng trùng tổng
+PASS HTTP 401 chuyển về đăng nhập; quay lại không phục hồi thống kê riêng tư
+PASS Không có exception runtime hoặc API ghi dữ liệu thống kê
+PASS 20/20 browser smoke scenarios

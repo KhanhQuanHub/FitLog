@@ -47,7 +47,9 @@ yarn-error.*
 .agents/skills/archify/
 .archify/
 
-# Local documentation & artifacts
-docs/
+# Local documentation & artifacts (chỉ lưu trên máy cá nhân, không đẩy lên GitHub)
 doc/
+docs/statistics/
+docs/bao_vao_de_hieu.md
+
 

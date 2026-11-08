@@ -29,7 +29,7 @@
     },
     {
       "email": "nguyenkhanhquan9999@gmail.com",
-      "password": "scrypt$16384$8$1$812cca80d7195cc80b00c7335af47b64$070b9a8f40465cee4e8563d241fe04e7318d7b6fef1d6f6ca11fcf7306ebc7513a7f55cd3ac2f98a11e0bff2157e2243704cac807174638c292c05f0ee06aaed",
+      "password": "scrypt$16384$8$1$9d9a742cfa2ebfc3d707978ec7ec2cfc$3747bb563672913d0bb00ba77da1858ee40d40bbf60edfecde267882c1d4a8711de8b3faffbe3005aa06d2708b79f4e83220387dffe6bdd717ec2ac976545645",
       "fullName": "Quan Nguyenkhanh",
       "role": "user",
       "createdAt": "2026-10-28T13:10:40.096Z",

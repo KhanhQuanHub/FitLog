@@ -14,6 +14,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { validateRunPayload } = require('./validate');
 const { hashPassword, verifyPassword } = require('./passwords');
+const emailService = require('./email');
 
 function getLocalIpv4Addresses() {
     const interfaces = os.networkInterfaces();
@@ -34,6 +35,9 @@ function getLocalIpv4Addresses() {
 const SECRET = process.env.FIGLOG_SECRET || 'doi-chuoi-bi-mat-nay-truoc-khi-nop-bai';
 const TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000; // token sống 7 ngày
 const DB_FILE = path.join(__dirname, 'db.json');
+const PASSWORD_RESET_WINDOW_MS = 15 * 60 * 1000;
+const PASSWORD_RESET_MAX_REQUESTS = 5;
+const passwordResetRequests = new Map();
 
 // ---------- BẢNG PHÂN QUYỀN ----------
 const OWNED = ['profiles', 'weightHistory', 'userGoals', 'workouts', 'runs']; // có cột userId
@@ -86,6 +90,87 @@ const strip = (d) =>
             : d;
 
 const deny = (res, code, message) => res.status(code).json({ error: message });
+
+function consumePasswordResetRequest(ip, now = Date.now()) {
+    for (const [requestIp, timestamps] of passwordResetRequests) {
+        const activeRequests = timestamps.filter(
+            (timestamp) => now - timestamp < PASSWORD_RESET_WINDOW_MS
+        );
+        if (activeRequests.length) passwordResetRequests.set(requestIp, activeRequests);
+        else passwordResetRequests.delete(requestIp);
+    }
+
+    const requests = passwordResetRequests.get(ip) || [];
+    if (requests.length >= PASSWORD_RESET_MAX_REQUESTS) return false;
+    requests.push(now);
+    passwordResetRequests.set(ip, requests);
+    return true;
+}
+
+async function persistDatabase(req, db) {
+    if (req.app && req.app.db && typeof req.app.db.write === 'function') {
+        await req.app.db.write();
+        return;
+    }
+    fs.writeFileSync(DB_FILE, `${JSON.stringify(db, null, 2)}\n`);
+}
+
+async function handlePasswordReset(req, res) {
+    const email = typeof req.body?.email === 'string'
+        ? req.body.email.trim().toLowerCase()
+        : '';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || email.length > 254) {
+        return deny(res, 400, 'Email không hợp lệ. Vui lòng kiểm tra lại định dạng.');
+    }
+
+    if (!consumePasswordResetRequest(req.ip || req.socket.remoteAddress || 'unknown')) {
+        res.set('Retry-After', String(Math.ceil(PASSWORD_RESET_WINDOW_MS / 1000)));
+        return deny(res, 429, 'Bạn đã yêu cầu quá nhiều lần. Vui lòng thử lại sau 15 phút.');
+    }
+
+    const db = getDbState(req);
+    const user = db.users.find(
+        (item) => String(item.email || '').trim().toLowerCase() === email
+    );
+    if (!user) {
+        return deny(res, 404, 'Email này chưa được đăng ký tài khoản FitLog.');
+    }
+    if (!emailService.isEmailConfigured()) {
+        return deny(res, 503, 'Dịch vụ email chưa được cấu hình. Vui lòng liên hệ quản trị viên.');
+    }
+
+    const temporaryPassword = crypto.randomBytes(9).toString('base64url');
+    const previousPasswordHash = user.password;
+    user.password = hashPassword(temporaryPassword);
+    try {
+        await persistDatabase(req, db);
+    } catch {
+        user.password = previousPasswordHash;
+        return deny(res, 500, 'Không thể cập nhật mật khẩu. Vui lòng thử lại sau.');
+    }
+
+    try {
+        await emailService.sendPasswordResetEmail(email, temporaryPassword);
+    } catch (error) {
+        console.error('Password reset email delivery failed:', {
+            code: error && typeof error === 'object' ? error.code : undefined,
+            command: error && typeof error === 'object' ? error.command : undefined,
+            responseCode: error && typeof error === 'object' ? error.responseCode : undefined,
+        });
+        user.password = previousPasswordHash;
+        try {
+            await persistDatabase(req, db);
+        } catch {
+            console.error('Không thể khôi phục mật khẩu sau khi gửi email thất bại.');
+            return deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng liên hệ quản trị viên.');
+        }
+        return deny(res, 503, 'Không thể gửi email lúc này. Vui lòng thử lại sau.');
+    }
+
+    return res.json({
+        message: 'Mật khẩu mới đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư và thư mục Spam.',
+    });
+}
 
 /**
  * Xử lý kiểm tra idempotent (chống ghi trùng theo clientId + userId)
@@ -151,6 +236,12 @@ module.exports = (req, res, next) => {
     res.jsonp = (data) => originalJsonp(strip(data));
 
     if (req.method === 'OPTIONS') return next(); // preflight CORS
+
+    if (req.method === 'POST' && req.path === '/password-reset') {
+        return handlePasswordReset(req, res).catch(() =>
+            deny(res, 500, 'Không thể hoàn tất yêu cầu. Vui lòng thử lại sau.')
+        );
+    }
 
     // ----- 0. NHẬN DIỆN MÁY CHỦ TRONG MẠNG LAN (KHÔNG CẦN TOKEN) -----
     if (req.method === 'GET' && req.path === '/__fitlog_ping') {

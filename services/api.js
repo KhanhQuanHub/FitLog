@@ -281,7 +281,9 @@ export async function request(path, options = {}) {
     // Xử lý lỗi máy chủ 5xx
     if (response.status >= 500) {
       throw new ApiError(
-        'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
+        path === '/password-reset' && typeof payload?.error === 'string'
+          ? payload.error
+          : 'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
         response.status,
         payload,
         'SERVER'
@@ -344,6 +346,15 @@ export async function login(email, password) {
     ...safeUser,
     fullName: safeUser.fullName || safeUser.name || 'Người dùng FitLog',
   };
+}
+
+export async function requestPasswordReset(email) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  return request('/password-reset', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ email: cleanEmail }),
+  });
 }
 
 /**

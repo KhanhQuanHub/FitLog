@@ -27,7 +27,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Controller, useForm } from 'react-hook-form';
 
 import Input from '../../components/ui/Input';
@@ -47,8 +47,11 @@ import {
 } from '../../domain/authSchema';
 import { useAuthStore } from '../../store/authStore';
 import { useTheme } from '../../store/themeStore';
+import type { RootStackParamList } from '../../navigation/RootNavigator';
 
-export default function RegisterScreen() {
+type Props = NativeStackScreenProps<RootStackParamList, 'Register'>;
+
+export default function RegisterScreen({ navigation }: Props) {
   const [securePassword, setSecurePassword] = useState(true);
   const [secureConfirm, setSecureConfirm] = useState(true);
   const [showBodyStep, setShowBodyStep] = useState(false);
@@ -117,7 +120,7 @@ export default function RegisterScreen() {
 
         // Nếu backend tạo tài khoản thành công nhưng không cấp token ngay -> quay về Login
         if (res.ok && !res.autoLoggedIn) {
-          router.navigate('/login');
+          navigation.navigate('Login');
         }
       } catch {
         // Lỗi đã được chuẩn hóa và lưu vào authError trong store
@@ -448,7 +451,7 @@ export default function RegisterScreen() {
               style={styles.linkButton}
               onPress={() => {
                 clearError();
-                router.navigate('/login');
+                navigation.navigate('Login');
               }}
               disabled={busy}
             >

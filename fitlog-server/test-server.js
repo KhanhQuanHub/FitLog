@@ -12,6 +12,8 @@ const path = require('path');
 const assert = require('assert');
 const jsonServer = require('json-server');
 const authMiddleware = require('./auth');
+const emailService = require('./email');
+const { isPasswordHash, migrateUsers, verifyPassword } = require('./passwords');
 
 const PORT = 3456;
 const BASE_URL = `http://127.0.0.1:${PORT}`;
@@ -25,6 +27,7 @@ function rebuildDatabase() {
         .filter((line) => !line.trim().startsWith('//'))
         .join('\n');
     const data = JSON.parse(clean);
+    migrateUsers(data.users);
     fs.writeFileSync(DB_JSON, JSON.stringify(data, null, 2));
 }
 
@@ -49,6 +52,12 @@ async function apiCall(endpoint, options = {}) {
 }
 
 async function runAllTests() {
+    const originalDatabase = fs.readFileSync(DB_JSON, 'utf8');
+    const previousSmtpEnv = {
+        SMTP_USER: process.env.SMTP_USER,
+        SMTP_APP_PASSWORD: process.env.SMTP_APP_PASSWORD,
+    };
+    const originalSendPasswordResetEmail = emailService.sendPasswordResetEmail;
     rebuildDatabase();
 
     const app = jsonServer.create();
@@ -91,6 +100,9 @@ async function runAllTests() {
             assert.ok(res.data.token);
             assert.strictEqual(res.data.user.id, 1);
             assert.strictEqual(res.data.user.password, undefined);
+            const storedPassword = app.db.getState().users.find((user) => user.id === 1).password;
+            assert.ok(isPasswordHash(storedPassword));
+            assert.ok(verifyPassword('123456', storedPassword));
             user1Token = res.data.token;
         });
 
@@ -130,6 +142,18 @@ async function runAllTests() {
             assert.strictEqual(res.status, 201);
             assert.strictEqual(res.data.role, 'user');
             assert.strictEqual(res.data.password, undefined);
+            const storedPassword = app.db.getState().users.find(
+                (user) => user.email === 'newuser@figlog.vn'
+            ).password;
+            assert.ok(isPasswordHash(storedPassword));
+            assert.ok(verifyPassword('123456', storedPassword));
+
+            const loggedIn = await apiCall('/login', {
+                method: 'POST',
+                body: { email: ' NEWUSER@FIGLOG.VN ', password: '123456' },
+            });
+            assert.strictEqual(loggedIn.status, 200);
+            assert.ok(loggedIn.data.token);
         });
 
         await testCase(5, 'POST /users thiếu email hoặc mật khẩu trả về 400', async () => {
@@ -300,6 +324,11 @@ async function runAllTests() {
             const badToken = await apiCall('/workouts', { token: 'token.gia.mao' });
             assert.strictEqual(nested.status, 403);
             assert.strictEqual(badToken.status, 401);
+        });
+
+        await testCase(37, 'GET /users truyền email và mật khẩu trên query bị từ chối', async () => {
+            const res = await apiCall('/users?email=quan%40figlog.vn&password=123456');
+            assert.strictEqual(res.status, 401);
         });
 
         // ==================== PHẦN B: 12 CA KIỂM THỬ MỚI CHO /runs ====================
@@ -486,10 +515,186 @@ async function runAllTests() {
                 assert.ok(res1.data[i].startedAt >= res1.data[i + 1].startedAt);
             }
         });
+
+        process.env.SMTP_USER = 'fitlog-test@example.com';
+        process.env.SMTP_APP_PASSWORD = 'test-app-password';
+        const sentResetEmails = [];
+        emailService.sendPasswordResetEmail = async (email, password) => {
+            sentResetEmails.push({ email, password });
+        };
+
+        await testCase(37, 'POST /password-reset email sai định dạng trả về 400', async () => {
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'not-an-email' },
+            });
+            assert.strictEqual(res.status, 400);
+            assert.match(res.data.error, /Email không hợp lệ/);
+        });
+
+        await testCase(38, 'POST /password-reset email chưa đăng ký trả về thông báo rõ ràng', async () => {
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'unknown@figlog.vn' },
+            });
+            assert.strictEqual(res.status, 404);
+            assert.match(res.data.error, /chưa được đăng ký/);
+            assert.strictEqual(sentResetEmails.length, 0);
+        });
+
+        await testCase(39, 'POST /password-reset gửi mật khẩu mới và chỉ lưu hash sau khi email thành công', async () => {
+            const user = app.db.getState().users.find((item) => item.email === 'quan@figlog.vn');
+            const previousHash = user.password;
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: ' QUAN@FIGLOG.VN ' },
+            });
+
+            assert.strictEqual(res.status, 200);
+            assert.match(res.data.message, /đã được gửi/);
+            assert.strictEqual(res.data.password, undefined);
+            assert.strictEqual(sentResetEmails.length, 1);
+            assert.strictEqual(sentResetEmails[0].email, 'quan@figlog.vn');
+            assert.match(sentResetEmails[0].password, /^[A-Za-z0-9_-]{12}$/);
+            assert.notStrictEqual(user.password, previousHash);
+            assert.ok(isPasswordHash(user.password));
+            assert.ok(verifyPassword(sentResetEmails[0].password, user.password));
+        });
+
+        await testCase(40, 'POST /password-reset gửi email lỗi thì hoàn nguyên mật khẩu cũ', async () => {
+            const user = app.db.getState().users.find((item) => item.email === 'quan@figlog.vn');
+            const previousHash = user.password;
+            emailService.sendPasswordResetEmail = async () => {
+                throw new Error('test email delivery failure');
+            };
+            const res = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'quan@figlog.vn' },
+            });
+            assert.strictEqual(res.status, 503);
+            assert.strictEqual(user.password, previousHash);
+        });
+
+        emailService.sendPasswordResetEmail = originalSendPasswordResetEmail;
+        await testCase(41, 'POST /password-reset giới hạn số lần yêu cầu theo IP', async () => {
+            for (let attempt = 0; attempt < 2; attempt += 1) {
+                const res = await apiCall('/password-reset', {
+                    method: 'POST',
+                    body: { email: 'unknown@figlog.vn' },
+                });
+                assert.strictEqual(res.status, 404);
+            }
+            const limited = await apiCall('/password-reset', {
+                method: 'POST',
+                body: { email: 'unknown@figlog.vn' },
+            });
+            assert.strictEqual(limited.status, 429);
+        });
+
+        await testCase(42, 'POST /change-password yêu cầu đăng nhập và mật khẩu hiện tại chính xác', async () => {
+            const unauthenticated = await apiCall('/change-password', {
+                method: 'POST',
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
+            });
+            assert.strictEqual(unauthenticated.status, 401);
+
+            const wrongCurrent = await apiCall('/change-password', {
+                method: 'POST',
+                token: user1Token,
+                body: {
+                    currentPassword: 'incorrect',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
+            });
+            assert.strictEqual(wrongCurrent.status, 400);
+            assert.match(wrongCurrent.data.error, /Mật khẩu hiện tại không đúng/);
+        });
+
+        await testCase(43, 'POST /change-password kiểm tra quy tắc và xác nhận mật khẩu mới', async () => {
+            const weakPassword = await apiCall('/change-password', {
+                method: 'POST',
+                token: user1Token,
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'weakpass',
+                    confirmPassword: 'weakpass',
+                },
+            });
+            assert.strictEqual(weakPassword.status, 400);
+            assert.match(weakPassword.data.error, /chữ hoa/);
+
+            const mismatchedPassword = await apiCall('/change-password', {
+                method: 'POST',
+                token: user1Token,
+                body: {
+                    currentPassword: '123456',
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass3',
+                },
+            });
+            assert.strictEqual(mismatchedPassword.status, 400);
+            assert.match(mismatchedPassword.data.error, /không khớp/);
+        });
+
+        await testCase(44, 'POST /change-password cập nhật hash và đăng nhập bằng mật khẩu mới', async () => {
+            const user = app.db.getState().users.find((item) => item.id === 1);
+            const previousHash = user.password;
+            const changed = await apiCall('/change-password', {
+                method: 'POST',
+                token: user1Token,
+                body: {
+                    currentPassword: sentResetEmails[0].password,
+                    newPassword: 'StrongPass2',
+                    confirmPassword: 'StrongPass2',
+                },
+            });
+            assert.strictEqual(changed.status, 200);
+            assert.strictEqual(changed.data.message, 'Đổi mật khẩu thành công');
+            assert.notStrictEqual(user.password, previousHash);
+            assert.ok(isPasswordHash(user.password));
+            assert.ok(verifyPassword('StrongPass2', user.password));
+
+            const oldLogin = await apiCall('/login', {
+                method: 'POST',
+                body: { email: 'quan@figlog.vn', password: sentResetEmails[0].password },
+            });
+            const newLogin = await apiCall('/login', {
+                method: 'POST',
+                body: { email: 'quan@figlog.vn', password: 'StrongPass2' },
+            });
+            assert.strictEqual(oldLogin.status, 401);
+            assert.strictEqual(newLogin.status, 200);
+        });
+
+        await testCase(45, 'PATCH /users/:id không cho thay mật khẩu bằng cách bỏ qua mật khẩu hiện tại', async () => {
+            const res = await apiCall('/users/1', {
+                method: 'PATCH',
+                token: user1Token,
+                body: { password: 'BypassPass3' },
+            });
+            assert.strictEqual(res.status, 400);
+            assert.match(res.data.error, /chức năng đổi mật khẩu/);
+
+            const putRes = await apiCall('/users/1', {
+                method: 'PUT',
+                token: user1Token,
+                body: { password: 'BypassPass3' },
+            });
+            assert.strictEqual(putRes.status, 405);
+        });
     } finally {
         await new Promise((resolve) => server.close(resolve));
-        // Khôi phục lại db.json sạch từ db.jsonc sau khi chạy kiểm thử
-        rebuildDatabase();
+        fs.writeFileSync(DB_JSON, originalDatabase);
+        emailService.sendPasswordResetEmail = originalSendPasswordResetEmail;
+        for (const [key, value] of Object.entries(previousSmtpEnv)) {
+            if (value === undefined) delete process.env[key];
+            else process.env[key] = value;
+        }
     }
 
     const failed = results.filter((r) => !r.passed);

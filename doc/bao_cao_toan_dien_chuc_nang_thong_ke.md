@@ -1,15 +1,13 @@
-# BÁO CÁO CHỈNH SỬA & GIẢI THÍCH CHỨC NĂNG THỐNG KÊ (DỄ HIỂU CHO SINH VIÊN)
+# BÁO CÁO TOÀN DIỆN CHỨC NĂNG THỐNG KÊ (DỰ ÁN FITLOG)
 
-Tài liệu này tổng hợp toàn bộ mã nguồn của chức năng Thống kê và cấu trúc điều hướng trong dự án **FitLog** (hoàn chỉnh cả **4 Giai đoạn đơn giản hóa** cùng kiến trúc điều hướng **React Navigation** đồng bộ toàn app), giải thích rõ ràng, chi tiết:
+Tài liệu này tổng hợp toàn bộ kiến trúc mã nguồn và luồng hoạt động của chức năng Thống kê trong ứng dụng di động **FitLog** (sử dụng kiến trúc điều hướng **React Navigation** đồng nhất toàn app), được trình bày theo cấu trúc rõ ràng, dễ hiểu:
 1. **Lấy dữ liệu nào từ Cơ sở dữ liệu (`db.json` & `AsyncStorage`) để thống kê?**
 2. **Luồng dữ liệu (Data Flow) đi từ CSDL lên màn hình như thế nào?**
 3. **Danh sách các React Hooks cơ bản và các biến State quan trọng được sử dụng.**
-4. **Chi tiết cả 4 giai đoạn đã chỉnh sửa code khó hiểu thành code tường minh ra sao.**
+4. **Thiết kế mã nguồn đơn giản, tường minh và dễ đọc hiểu.**
 5. **Kiến trúc điều hướng chuẩn React Navigation (`@react-navigation/native-stack`, `@react-navigation/bottom-tabs`) đồng nhất toàn dự án.**
-6. **Ranh giới trách nhiệm & Danh mục toàn bộ các file bạn phụ trách.**
-7. **Bộ dữ liệu mẫu & Script tự động nạp số liệu demo (`npm run seed:stats`).**
-8. **Bộ kiểm thử tự động (195/195 Tests PASS, 0 lỗi TypeScript & Lint).**
-9. **Hướng dẫn ôn tập & Bộ câu hỏi vấn đáp khi bảo vệ đồ án.**
+6. **Ranh giới trách nhiệm & Danh mục toàn bộ các file phụ trách.**
+7. **Hướng dẫn ôn tập & Bộ câu hỏi vấn đáp khi bảo vệ đồ án.**
 
 ---
 
@@ -27,7 +25,7 @@ Chức năng thống kê **chỉ đọc dữ liệu (GET)** thông qua `services
 | 6 | `queue` | `AsyncStorage.getItem('@figlog/run_queue_v1')` | Các buổi chạy vừa hoàn thành khi **mất mạng** đang chờ đồng bộ lên server (được gắn cờ `_queued: true`) | Tóm tắt, Chạy bộ, Thời gian, Calo, Thói quen |
 | 7 | `cache` | `AsyncStorage.getItem('@figlog/run_history_cache_v1')` | Lịch sử các buổi chạy đã lưu tạm trên máy để hiển thị khi điện thoại không có kết nối mạng | Chạy bộ (khi offline) |
 
-> **Quy tắc lọc tài khoản an toàn:** Mọi bản ghi đọc về đều đi qua hàm `owned()` / `filterOwned()` để kiểm tra `String(row.userId) === String(currentUserId)`. Bản ghi của tài khoản khác hoặc không rõ chủ sở hữu sẽ bị loại bỏ ngay.
+> **Quy tắc lọc tài khoản an toàn:** Mọi bản ghi đọc về đều đi qua hàm `owned()` / `filterOwned()` để kiểm tra `String(row.userId) === String(currentUserId)`. Bản ghi của tài khoản khác hoặc không rõ chủ sở hữu sẽ bị loại bỏ ngay, đảm bảo tính riêng tư của dữ liệu người dùng.
 
 ---
 
@@ -64,10 +62,10 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ## 3. CÁC HOOK VÀ BIẾN QUAN TRỌNG ĐƯỢC SỬ DỤNG
 
-### 3.1. Các React Hooks và Navigation Hooks (Chỉ dùng các Hook cơ bản, quen thuộc)
+### 3.1. Các React Hooks và Navigation Hooks
 1. **`useState`**:
    * Trong `StatisticsDataProvider.tsx`:
-     * `[snapshot, setSnapshot]`: Lưu toàn bộ bản chụp dữ liệu thống kê của 5 bảng (thay thế hoàn toàn `useSyncExternalStore` khó hiểu trước đây).
+     * `[snapshot, setSnapshot]`: Lưu toàn bộ bản chụp dữ liệu thống kê của 5 bảng.
      * `[today, setToday]`: Lưu chuỗi ngày hôm nay theo giờ địa phương (`'YYYY-MM-DD'`).
    * Trong `StatisticsDetailScreen.tsx`:
      * `[kind, setKind]`: Lưu loại kỳ đang chọn (`'day'` | `'week'` | `'month'` | `'year'`).
@@ -88,7 +86,7 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
    * Trong `StatisticsDataProvider.tsx`: `repositoryRef` giữ tham chiếu tới đối tượng `repository` hiện tại để hàm `refresh()` có thể gọi bất kỳ lúc nào mà không tạo lại hàm.
    * Trong `useStatisticsNavigation.ts`: `latest` giữ bản chụp `snapshot` mới nhất phục vụ kiểm tra trạng thái `'loading'` khi màn hình được focus.
 4. **`useMemo`**:
-   * Trong `StatisticsSummaryScreen.tsx` và `StatisticsDetailScreen.tsx`: Ghi nhớ kết quả của `getStatisticsPeriod(kind, anchor)` và `buildStatisticsView(snapshot, today, kind, anchor)`.
+   * Trong `StatisticsSummaryScreen.tsx` và `StatisticsDetailScreen.tsx`: Ghi nhớ kết quả của `getStatisticsPeriod(kind, anchor)` và `buildStatisticsView(snapshot, today, kind, anchor)` để tránh tính toán lại khi không có thay đổi.
 5. **`useCallback` & `useContext`**:
    * Trong `StatisticsDataProvider.tsx`: `useCallback` tạo hàm `refresh` ổn định; `useContext(StatisticsContext)` trong `useStatisticsData()` lấy trực tiếp `{ snapshot, today, refresh }`.
 6. **`useFocusEffect`** (từ `@react-navigation/native`):
@@ -106,90 +104,43 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ---
 
-## 4. CHI TIẾT CÁC THAY ĐỔI QUA CẢ 4 GIAI ĐOẠN
+## 4. THIẾT KẾ MÃ NGUỒN ĐƠN GIẢN, TƯỜNG MINH VÀ DỄ HIỂU
 
-### Giai đoạn 1: Đơn giản hóa & chú thích tầng Kiểu dữ liệu và Tính toán (`domain/statistics/`)
-1. **`domain/statistics/types.ts`**:
-   * **Thay đổi:** Bổ sung chú thích tiếng Việt đầy đủ cho toàn bộ 13 `interface` và `type` (`StatisticsPeriod`, `WorkoutRecord`, `RunRecord`, `ProfileRecord`, `WeightRecord`, `UserGoalRecord`, `StatisticsMetric`, `WorkoutState`, `StatisticsInput`...). Giải thích rõ tại sao dùng kiểu `unknown` cho dữ liệu JSON và ý nghĩa của `value`, `missingCount`, `complete`.
-2. **`domain/statistics/statistics.ts`**:
-   * **Thay đổi:**
-     * Tách công thức tính thứ trong tuần khó hiểu `(startDate.getUTCDay() + 6) % 7` thành hàm riêng `getMondayBasedIndex(date: Date)` có chú thích giải thích cách đổi từ Chủ Nhật = 0 của JavaScript sang Thứ Hai = 0.
-     * Tách biểu thức toán tử 3 ngôi 4 tầng phân loại BMI thành hàm riêng `classifyBmiGroup(bmi)` dùng `if (bmi < 18.5) ... if (bmi < 25) ...` cực kỳ dễ đọc.
-     * Viết lại các hàm `getStatisticsPeriod`, `shiftStatisticsPeriod`, `sum`, `average`, `deduplicateStatisticsRuns`, `calculateSchedule`, `calculateRuns`, `calculateHabits`, `calculateWeight`, `calculateTargets`, `calculateStatistics` với cấu trúc `if / else` tường minh, đặt tên biến trung gian rõ nghĩa (`daysSinceMonday`, `validCount`, `allMissing`, `heightInMeters`, `canCalculatePercent`) và thêm JSDoc tiếng Việt (`@param`, `@returns`) ở đầu mỗi hàm.
+Toàn bộ mã nguồn của chức năng Thống kê được thiết kế theo các nguyên tắc lập trình cơ bản, trong sáng, dễ đọc và dễ bảo trì:
 
-### Giai đoạn 2: Đơn giản hóa sâu tầng Quản lý State & Dịch vụ (`services/`, `StatisticsDataProvider.tsx`)
-3. **`screens/statistics/StatisticsDataProvider.tsx`**:
-   * **Thay đổi lớn:** Loại bỏ hoàn toàn hook nâng cao `useSyncExternalStore` (cùng các hàm giả `noopSubscribe`, `noSnapshot`), thay bằng `useState<StatisticsDataSnapshot | null>(null)` + `useEffect` + `useRef` truyền thống.
-   * Trong `useEffect`, đăng ký `instance.subscribe(() => setSnapshot(instance.getSnapshot()))` để cập nhật state `snapshot`; `StatisticsContext` truyền trực tiếp `{ snapshot, today, refresh }` xuống các màn hình con.
-4. **`services/statisticsRepository.ts`**:
-   * **Thay đổi lớn 1:** Loại bỏ hoàn toàn thuật toán **Disjoint-Set (Union-Find)** dùng mảng `parents[]` và nén đường đi `root(index)` trong hàm `mergeStatisticsRuns`, thay bằng vòng lặp duyệt qua danh sách nhóm `mergedGroups` chứa `Set` các `clientIds` và `serverIds`.
-   * **Thay đổi lớn 2:** Tách nhỏ hàm `mergeRunSources` và `refresh` thành các hàm phụ độc lập, dễ đọc:
-     * `resolveRunsOrigin(online, hasPending, hasPrevious, hasCached)`: Dùng `if / else` xác định nguồn dữ liệu (`'network'`, `'mixed'`, `'memory'`, `'cache'`, `'queue'`).
-     * `extractQueuedRuns(queueResult, session, ownsQueuedRun)`: Tách riêng bước đọc và kiểm tra chủ sở hữu của các buổi chạy trong hàng đợi offline (`QUEUE`).
-     * `loadStandardTableSource(readFn, previousSource, userId, now)`: Tách riêng bước gọi API và xử lý lỗi cho 4 bảng thông thường (`workouts`, `profiles`, `weights`, `userGoals`), giúp hàm `refresh()` ngắn gọn và dễ theo dõi.
-5. **`services/statisticsSession.js`**, **`services/statisticsData.ts`**, **`services/api.js`**, **`services/runRepository.js`**, **`screens/statistics/useStatisticsNavigation.ts`**:
-   * **Thay đổi:** Bổ sung đầy đủ JSDoc tiếng Việt (`@param`, `@returns`) cho tất cả các hàm và tách các biểu thức điều kiện phức tạp thành biến trung gian rõ nghĩa (`isValidNumber`, `isValidString`, `isMatchingUser`, `loginChanged`, `userChanged`, `isAnyLoading`).
+### 4.1. Tầng Tính toán thuần túy (`domain/statistics/`): Tách biệt logic và giao diện
+* **Hàm thuần túy (Pure Functions):** Toàn bộ các hàm tính toán (`sum`, `average`, `calculateSchedule`, `calculateRuns`, `calculateHabits`, `calculateWeight`) được viết dưới dạng hàm thuần túy: chỉ nhận tham số đầu vào và trả về kết quả mới. Hàm hoàn toàn không gọi API bên ngoài và không làm thay đổi mảng dữ liệu gốc, giúp việc kiểm thử và theo dõi cực kỳ dễ dàng.
+* **Cấu trúc rẽ nhánh `if / else` tường minh:** Tránh việc lạm dụng các toán tử 3 ngôi (`? :`) lồng nhau nhiều tầng. Ví dụ: hàm phân loại BMI `classifyBmiGroup(bmi)` được viết bằng các nhánh `if (bmi < 18.5) return 'thin'; if (bmi < 25) return 'normal'; ...` rất tự nhiên, đọc vào là hiểu ngay logic.
+* **Hàm trợ giúp nhỏ, đặt tên rõ nghĩa:** Các đoạn tính toán ngày tháng được tách thành hàm riêng có tên tiếng Anh rõ nghĩa và chú thích tiếng Việt:
+  * `getMondayBasedIndex(date)`: Chuyển đổi cách đánh số thứ trong tuần từ quy ước Chủ Nhật = 0 của JavaScript sang Thứ Hai = 0 theo lịch Việt Nam.
+  * `calendarDate(year, month, day)`: Khởi tạo ngày ở mốc UTC 00:00:00 để tránh sai lệch giờ do múi giờ địa phương.
+* **Biến trung gian dễ đọc:** Các phép tính được chia nhỏ với biến trung gian cụ thể như `daysSinceMonday`, `validCount`, `allMissing`, `heightInMeters` thay vì gộp nhiều công thức vào một dòng code dài.
 
-### Giai đoạn 3: Làm phẳng sâu cấu trúc các Màn hình thống kê & ViewModel (`screens/statistics/`)
-6. **`screens/statistics/viewModel.ts`**:
-   * **Thay đổi lớn:**
-     * Tách hàm `buildChartSeries` độc lập ở cấp module để lọc ngày tương lai và chuẩn bị các cột biểu đồ.
-     * Tách hàm `buildWeightAndBmiMetrics(snapshot, report)` để tính chỉ số Cân nặng hiện tại và BMI mà **không cần gán đè `.complete = false` rải rác** trên đối tượng.
-     * Tách hàm `checkCombinedActivityStatus(snapshot, report)` để kiểm tra trạng thái sẵn sàng (`activityAvailable`) và đầy đủ (`activityComplete`) của dữ liệu hoạt động kết hợp (phục vụ màn Thói quen luyện tập).
-7. **`screens/statistics/StatisticsDetailScreen.tsx`**:
-   * **Thay đổi lớn:**
-     * Tách hàm `checkPeriodShiftBounds(kind, anchor, today)` ra khỏi component để kiểm tra biên lùi/tiến kỳ (`canPrevious`, `canNext`).
-     * Thay biểu thức toán tử 3 ngôi 3 tầng lồng nhau trong JSX (`!snapshot ? ... : !view ? ... : <View>...`) bằng hàm `renderMainDetailContent()` dùng `if (!snapshot) return ...; if (!view) return ...;` rõ ràng.
-8. **`screens/statistics/StatisticsSummaryScreen.tsx`** & **`screens/StatsScreen.tsx`**:
-   * **Thay đổi lớn:**
-     * Tách hàm `buildWeeklyCommitmentProgress(snapshot, report)` và `buildSummaryMetricItems(snapshot, view, today, openDetail)` ra cấp module.
-     * Tách các hàm `renderLatestRunSection`, `renderDataSourcesStatusSection`, và `renderSummaryMainContent` dùng `if / else` tường minh, xóa bỏ hoàn toàn các toán tử `? :` lồng nhau trong JSX.
-9. **`screens/statistics/RunningStatisticsScreen.tsx`**:
-   * **Thay đổi lớn:**
-     * Thay `JSON.stringify(['client', row.clientId])` khó hiểu bằng hàm `getRunRecordKey(row)` trả về chuỗi ghép đơn giản `` `client:${row.clientId}` `` hoặc `` `id:${String(row.id)}` ``.
-     * Tách hàm `buildRateMetric(source, value, excluded)` ra cấp module để đóng gói các chỉ số tỷ lệ (Pace, Tốc độ, Nhịp bước).
-     * Tách toàn bộ cửa sổ bật lên xem chi tiết buổi chạy thành component riêng `RunDetailModal` và tách hàm `renderRunHistoryRow`.
-10. **`screens/statistics/ScheduleStatisticsScreen.tsx`**:
-    * **Thay đổi lớn:** Đưa bản đồ nhãn trạng thái `WORKOUT_STATE_LABELS` lên đầu file; tách 2 hàm `renderExerciseSummaryRow` và `renderScheduleWorkoutRow` sử dụng `if (state === 'done')` rõ ràng.
-11. **`screens/statistics/WeightStatisticsScreen.tsx`**:
-    * **Thay đổi lớn:** Tách 4 hàm phụ độc lập ở cấp module với đầy đủ JSDoc (`@param`, `@returns`): `calculateDayOffset`, `getWeightChangeDescription`, `getWeightPeriodLabel`, `getTargetGoalStatusMessage`, và hàm `renderTargetWeightContent()`.
-12. **`screens/statistics/GoalsStatisticsScreen.tsx`**:
-    * **Thay đổi lớn:** Tách 3 hàm phụ độc lập ở cấp module: `buildWeeklyTargetMetric` (thay thế việc gán đè `minutes.complete = false` và `sessions.complete = false`), `getMissingGoalMessage`, `getRecentWeightLabel`, và hàm `renderActiveGoalSectionContent()`.
-13. **`screens/statistics/HabitsStatisticsScreen.tsx`**:
-    * **Thay đổi lớn:** Tách 3 hàm phụ độc lập ở cấp module: `getCalendarCellStatus` (xác định nhãn và ký hiệu `●`, `–`, `·`, `?` cho từng ô lịch), `buildActivityChartPoints`, và `buildWeekdayChartPoints`.
-14. **`navigation/StatisticsNavigator.tsx`** & **`screens/StatsScreen.tsx`**:
-    * **Thay đổi lớn:** Đóng gói toàn bộ phân hệ Thống kê thành một Native Stack Navigator (`StatisticsNavigator`), bao gồm 3 route:
-      * `StatisticsSummary`: Màn Tóm tắt số liệu tổng quan.
-      * `StatisticsCategories`: Màn danh sách 7 nhóm danh mục.
-      * `StatisticsDetail`: Màn hình chi tiết hiển thị 1 trong 7 danh mục dựa theo tham số `route.params`.
-    * Toàn bộ ngăn xếp được bọc trong một `StatisticsDataProvider` duy nhất, giúp các màn hình dùng chung bộ nhớ cache và đồng bộ làm mới dữ liệu. `screens/StatsScreen.tsx` re-export navigator này để cắm thẳng vào tab "Thống kê" của `MainTabs`.
+### 4.2. Tầng Quản lý State & Dịch vụ (`services/`, `StatisticsDataProvider.tsx`): Đơn giản và an toàn
+* **Chỉ dùng React Hooks chuẩn:** Bản chụp dữ liệu `snapshot` được quản lý bằng bộ đôi quen thuộc `useState` và `useEffect` truyền thống trong `StatisticsDataProvider.tsx`, sau đó cung cấp xuống toàn bộ các màn hình con thông qua React Context (`useContext`).
+* **Cấu trúc dữ liệu mảng và Set cơ bản:** Trong `services/statisticsRepository.ts`, dữ liệu chạy bộ và hàng đợi offline được gom nhóm, kiểm tra trùng lặp bằng các vòng lặp duyệt mảng và cấu trúc `Set` cơ bản, dễ hiểu đối với bất kỳ lập trình viên nào.
+* **Chia nhỏ tác vụ bất đồng bộ thành các hàm đơn nhiệm:** Hàm làm mới dữ liệu `refresh()` được chia nhỏ thành các hàm phụ trợ độc lập:
+  * `resolveRunsOrigin`: Sử dụng `if / else` xác định nguồn dữ liệu đang lấy từ mạng (`network`), bộ nhớ đệm (`cache`), hay hàng đợi (`queue`).
+  * `extractQueuedRuns`: Tách riêng bước đọc và kiểm tra chủ sở hữu của các buổi chạy trong hàng đợi offline.
+  * `loadStandardTableSource`: Tải và bắt lỗi riêng cho từng bảng CSDL, giữ lại dữ liệu cũ khi mất mạng mà không làm crash ứng dụng.
+* **Lọc quyền sở hữu chặt chẽ:** Hàm `filterOwned` lọc dữ liệu an toàn bằng cách so sánh `String(row.userId) === String(currentUserId)`.
 
-### Giai đoạn 4: Tách nhỏ logic vẽ biểu đồ SVG và định dạng hiển thị (`components/statistics/`)
-15. **`components/statistics/presentation.ts`**:
-    * **Thay đổi lớn 1 (Tách nhỏ định dạng thời gian & pace):**
-      * Tách hàm `formatPaceMmSs(secondsPerKm)` để đổi số giây/km sang dạng `'Phút:Giây'` (`M:SS`).
-      * Tách hàm `formatDurationHhMmSs(durationSec)` để đổi tổng số giây sang dạng `'Giờ:Phút:Giây'` (`HH:MM:SS`).
-    * **Thay đổi lớn 2 (Chia hàm tính tọa độ biểu đồ `buildStatisticsChart` thành 5 hàm nhỏ độc lập):**
-      * `calculateChartVerticalRange(knownValues, kind)`: Tính giới hạn giá trị nhỏ nhất (`minimum`) và lớn nhất (`maximum`) trên trục dọc Y kèm khoảng đệm (`padding`).
-      * `calculateChartHorizontalLayout(points, viewport, leftMargin, kind)`: Tính chiều rộng tổng của biểu đồ (`width`, `plotWidth`), kiểm tra thứ tự tăng dần (`isStrictlyOrdered`) và khoảng cách (`span`), đảm bảo mỗi mốc cách nhau ít nhất `48px` để dễ chạm trên màn hình cảm ứng.
-      * `buildBarChartPlotPoints(values, leftMargin, plotWidth, bottomY, valueToY)`: Tính tọa độ `(x, y)` cho từng cột trong biểu đồ cột (`kind === 'bar'`).
-      * `buildLineChartPlotPoints(...)`: Tính tọa độ `(x, y)` cho từng điểm trong biểu đồ đường (`kind === 'line'`), đặt điểm duy nhất ở chính giữa hoặc dàn theo đúng khoảng cách ngày thực tế.
-      * `buildSvgLinePaths(dots)`: Nối các điểm có dữ liệu liên tiếp thành chuỗi lệnh SVG Path (`'M x,y L x2,y2'`), ngắt đoạn tại những mốc thiếu dữ liệu (`dot.y === null`).
-16. **`components/statistics/StatisticsChart.tsx`**:
-    * **Thay đổi lớn:**
-      * Tách hàm `formatYAxisTickLabel(tickValue, unit)` và `buildChartUnitCaption(unit, suffix)` ra cấp module để xóa bỏ các toán tử 3 ngôi lồng nhau trong JSX.
-      * Tách hàm `renderChartPointSvg(point, index)` sử dụng `if (point.y === null)` và `if (kind === 'bar')` riêng biệt để vẽ vạch ngang `Line`, cột `Rect`, hoặc chấm tròn `Circle`.
-      * Tách hàm `renderTouchTargetOverlay(point, index)` để vẽ lớp nút chạm trong suốt (`Pressable`) phía trên từng cột/điểm biểu đồ.
-17. **`components/statistics/StatisticsStatus.tsx`**:
-    * **Thay đổi lớn:**
-      * Đưa bảng văn bản mặc định `DEFAULT_DATA_STATE_TEXT` lên đầu file.
-      * Tách hàm `collectSourceWarningNotes(source)` và `formatUpdatedTimeLabel(updatedAt)` ra cấp module với đầy đủ JSDoc (`@param`, `@returns`), giúp component `StatisticsSourceNotice` ngắn gọn và dễ đọc.
-18. **`components/statistics/StatisticsProgress.tsx`**, **`components/statistics/StatisticsPeriodPicker.tsx`**, **`components/statistics/StatisticsMetricCard.tsx`**, **`components/statistics/StatisticsActivityRow.tsx`**, **`components/statistics/index.ts`**:
-    * **Thay đổi:**
-      * Giải thích chi tiết công thức toán học vẽ vòng tròn tiến độ bằng chu vi hình tròn `circumference = 2 * Math.PI * circleRadius` và `strokeDashoffset`.
-      * Tách hàm `renderArrowButton(direction)` trong `StatisticsPeriodPicker`.
-      * Thay toán tử `? :` ở phần `return` của `StatisticsActivityRow` bằng câu lệnh `if (onPress) return <Pressable>...` rõ ràng.
-      * Bổ sung chú thích Tiếng Việt ở đầu mọi file/hàm và các dòng xử lý cốt lõi.
+### 4.3. Tầng Màn hình & ViewModel (`screens/statistics/`): Làm phẳng giao diện
+* **Tách nhỏ các hàm render giao diện:** Thay vì viết code JSX dài hàng trăm dòng với nhiều biểu thức điều kiện lồng nhau, các màn hình đều tách thành các hàm render phụ trợ sử dụng câu lệnh `if / else` tường minh:
+  * Trong `StatisticsDetailScreen.tsx`: Tách hàm `renderMainDetailContent()` kiểm tra rõ ràng `if (!snapshot) ... if (!view) ...`.
+  * Trong `StatisticsSummaryScreen.tsx`: Tách riêng các hàm `renderLatestRunSection()`, `renderDataSourcesStatusSection()`, và `renderSummaryMainContent()`.
+* **Đóng gói dữ liệu hiển thị (ViewModel):** File `viewModel.ts` chuẩn bị sẵn toàn bộ các chuỗi định dạng (nhãn ngày tháng Việt Nam `DD/MM/YYYY`, nhãn kỳ `Tháng 11/2026`, chỉ số đã làm tròn kèm đơn vị) giúp các màn hình JSX chỉ việc đọc và hiển thị trực tiếp mà không cần tính toán phức tạp bên trong component.
+* **Mã định danh khóa nhận diện rõ ràng:** Các bản ghi chạy bộ dùng chuỗi định danh đơn giản như `client:${row.clientId}` hoặc `id:${row.id}` để làm thuộc tính `key` cho danh sách, tránh nhầm lẫn bản ghi.
+
+### 4.4. Tầng Giao diện & Biểu đồ SVG (`components/statistics/`): Trực quan, module hóa cao
+* **Chia nhỏ quy trình vẽ biểu đồ SVG:** Hàm `buildStatisticsChart` trong `presentation.ts` được module hóa thành 5 hàm con độc lập, mỗi hàm đảm nhận đúng một nhiệm vụ toán học:
+  1. `calculateChartVerticalRange`: Xác định giá trị nhỏ nhất và lớn nhất trên trục dọc Y kèm khoảng đệm an toàn.
+  2. `calculateChartHorizontalLayout`: Tính chiều rộng khung vẽ và khoảng cách các cột (đảm bảo mỗi mốc cách nhau tối thiểu 48px để ngón tay dễ chạm trên điện thoại).
+  3. `buildBarChartPlotPoints`: Tính tọa độ `(x, y)` cho từng cột của biểu đồ cột.
+  4. `buildLineChartPlotPoints`: Tính tọa độ `(x, y)` cho từng điểm mốc của biểu đồ đường.
+  5. `buildSvgLinePaths`: Nối các điểm có dữ liệu thành chuỗi lệnh SVG Path `'M x,y L x2,y2'`, tự động ngắt đoạn tại những mốc thiếu dữ liệu.
+* **Tách riêng các lớp hiển thị:** Component `StatisticsChart.tsx` tách riêng hàm vẽ vạch trục (`formatYAxisTickLabel`), hàm vẽ cột/chấm tròn SVG (`renderChartPointSvg`), và hàm vẽ lớp nút bấm trong suốt (`renderTouchTargetOverlay`).
+* **Chú thích hình học trực quan:** Các công thức chu vi vòng tròn (`2 * Math.PI * r`) hay độ lệch nét vẽ (`strokeDashoffset`) trong `StatisticsProgress.tsx` đều có chú thích tiếng Việt giải thích cặn kẽ bản chất hình học.
 
 ---
 
@@ -269,8 +220,7 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ### 6.2. Các file phụ trợ bổ sung
 * **Điểm cắm vào Bottom Tabs:** Đúng khai báo `<Tab.Screen name="Stats" component={StatisticsNavigator} />` trong `navigation/MainTabs.tsx`.
-* **Script & Dữ liệu mẫu:** `fitlog-server/seed-statistics.mjs` và các bản ghi mẫu trong `fitlog-server/db.json`.
-* **Tài liệu báo cáo:** `doc/bao_vao_de_hieu.md`.
+* **Tài liệu báo cáo:** `doc/bao_cao_toan_dien_chuc_nang_thong_ke.md`.
 
 ### 6.3. Ranh giới an toàn (Tuyệt đối không can thiệp code của thành viên khác)
 * Không chỉnh sửa màn hình Xác thực: `screens/auth/LoginScreen.tsx`, `screens/auth/RegisterScreen.tsx`, `screens/auth/ForgotPasswordScreen.tsx`.
@@ -281,53 +231,15 @@ Luồng dữ liệu của chức năng thống kê đi theo **5 bước một ch
 
 ---
 
-## 7. BỘ DỮ LIỆU MẪU & SCRIPT DEMO (`npm run seed:stats`)
+## 7. HƯỚNG DẪN ÔN TẬP & BỘ CÂU HỎI VẤN ĐÁP KHI BẢO VỆ ĐỒ ÁN
 
-Để đảm bảo khi chạy demo ứng dụng hoặc giáo viên chấm bài thì biểu đồ có số liệu thực tế nhiều tháng, script [`fitlog-server/seed-statistics.mjs`](file:///D:/FitLog/fitlog-server/seed-statistics.mjs) được thiết lập:
-* **Lệnh chạy:**
-  ```bash
-  npm run seed:stats
-  ```
-* **Dữ liệu được nạp tự động:**
-  * Dữ liệu tập luyện (`workouts`) trải dài qua các tháng 8, 9, 10, 11/2026.
-  * Dữ liệu chạy bộ (`runs`) với đầy đủ pace, calories, quãng đường km, số bước chân.
-  * Lịch sử cân nặng (`weightHistory`) qua nhiều mốc thời gian để vẽ biểu đồ diễn biến cân nặng và đường BMI.
-  * Phân biệt rõ giữa `userId: 1` và `userId: 2` để kiểm chứng việc lọc dữ liệu theo tài khoản hoạt động chính xác.
-
----
-
-## 8. BỘ KIỂM THỬ TỰ ĐỘNG (195/195 TESTS PASS)
-
-Toàn bộ logic tính toán, bảo mật dữ liệu cá nhân, xử lý mất mạng và vẽ biểu đồ được bảo đảm bằng **195 ca kiểm thử tự động**:
-* **Lệnh thực thi:**
-  ```bash
-  npm run test:statistics
-  ```
-* **Danh sách 9 file kiểm thử:**
-  1. `domain/statistics/statistics.test.mjs`: Test các phép tính toán, streak, BMI, chia kỳ ngày/tuần/tháng/năm.
-  2. `services/statisticsRepository.test.mjs`: Test tải bất đồng bộ, lọc `userId`, cơ chế bộ đệm stale cache khi mất mạng.
-  3. `services/statisticsData.integration.test.mjs`: Test tích hợp API JSON Server và AsyncStorage.
-  4. `services/statisticsDatabase.audit.test.mjs`: Test đối chiếu dữ liệu trên 8 tài khoản mẫu trong CSDL.
-  5. `components/statistics/presentation.test.mjs`: Test định dạng số tiếng Việt, pace phút:giây, tọa độ hình học SVG.
-  6. `components/statistics/statistics-ui.test.mjs`: Test render thẻ chỉ số, vòng tiến độ, tương tác chạm cột biểu đồ.
-  7. `screens/statistics/statistics-screens.test.mjs`: Test render cả 7 màn hình chi tiết và màn Tóm tắt tổng quan.
-  8. `screens/statistics/statistics-navigation.test.mjs`: Test luồng điều hướng và nút quay lại.
-  9. `test-support/statisticsUiHarness.mjs`: Giả lập môi trường DOM & React Native trên Node.js.
-* **Tiêu chuẩn chất lượng:**
-  * Typecheck: `npx tsc --noEmit` ➔ **0 lỗi**.
-  * Linter: `npx expo lint` ➔ **0 cảnh báo, 0 lỗi**.
-
----
-
-## 9. HƯỚNG DẪN ÔN TẬP & BỘ CÂU HỎI VẤN ĐÁP KHI BẢO VỆ ĐỒ ÁN
-
-### 9.1. Lộ trình 4 bước đọc hiểu mã nguồn
+### 7.1. Lộ trình 4 bước đọc hiểu mã nguồn
 * **Bước 1 (Dữ liệu):** Đọc `domain/statistics/types.ts` để hiểu cấu trúc `WorkoutRecord`, `RunRecord`, `StatisticsPeriod`.
 * **Bước 2 (Tính toán):** Đọc `domain/statistics/statistics.ts` để hiểu `getStatisticsPeriod` (tính tuần từ Thứ 2 đến Chủ nhật) và `calculateStatistics` (tính tổng calo, phút, km, streak).
 * **Bước 3 (Quản lý State):** Đọc `services/statisticsRepository.ts` và `screens/statistics/StatisticsDataProvider.tsx` để hiểu cách `useState(snapshot)` chia sẻ dữ liệu qua `useStatisticsData()`.
 * **Bước 4 (Giao diện):** Đọc `navigation/StatisticsNavigator.tsx` và `components/statistics/StatisticsChart.tsx` để hiểu luồng điều hướng 3 cấp và cách vẽ biểu đồ SVG.
 
-### 9.2. Bộ 5 câu hỏi thường gặp khi bảo vệ đồ án và câu trả lời chuẩn
+### 7.2. Bộ 5 câu hỏi thường gặp khi bảo vệ đồ án và câu trả lời chuẩn
 
 #### Câu 1: Chức năng Thống kê lấy dữ liệu từ đâu và có sửa đổi CSDL không?
 > **Trả lời:** Chức năng Thống kê **chỉ đọc dữ liệu (GET)** từ 5 bảng trên server JSON Server (`/workouts`, `/runs`, `/profiles`, `/weightHistory`, `/userGoals`) và 2 khóa bộ nhớ cục bộ `AsyncStorage` (`QUEUE` và `CACHE`). Thống kê hoàn toàn không tạo mới hay ghi đè CSDL, đảm bảo an toàn 100% cho dữ liệu của người dùng.

@@ -1,0 +1,40 @@
+# ============================================================================
+# .easignore
+# Mặc định EAS Build đọc .gitignore nên sẽ bỏ qua file .env khi build APK trên đám mây.
+# File .easignore này giữ nguyên các thư mục nặng/nhạy cảm cần loại trừ, nhưng CHO PHÉP
+# đóng gói file .env (!.env) để EXPO_PUBLIC_API_URL trong .env có hiệu lực ngay khi build APK.
+# ============================================================================
+
+# dependencies
+node_modules/
+fitlog-server/node_modules/
+
+# Expo & build artifacts
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native signing keys & generated folders
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+/ios
+/android
+
+# Metro & debug logs
+.metro-health-check*
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.tsbuildinfo
+
+# Cho phép EAS Build đọc file .env chứa EXPO_PUBLIC_API_URL (vẫn bị chặn trên Git nhờ .gitignore)
+.env*.local
+!.env

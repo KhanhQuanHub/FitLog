@@ -1,6 +1,6 @@
 // ============================================================================
 // navigation/MainTabs.tsx
-// Thanh điều hướng 5 tab dưới cùng (Hôm nay, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
+// Thanh điều hướng 5 tab dưới cùng (Mục tiêu, Lịch tập, Chạy bộ, Thống kê, Hồ sơ):
 // - Khắc phục triệt để lỗi icon bị cắt mất một nửa bên phải:
 //   1. Bỏ qua TabBarIcon mặc định của @react-navigation/bottom-tabs (vốn ép khung
 //      wrapperMaterial cố định 24x24px với position: 'absolute', khiến View con có
@@ -18,19 +18,17 @@ import {
   createBottomTabNavigator,
 } from '@react-navigation/bottom-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import ScheduleScreen from '../screens/ScheduleScreen';
 import TodayScreen from '../screens/TodayScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import {
-  fontSize,
   fontWeight,
   layout,
-  radius,
-  spacing,
 } from '../constants/theme';
 import { useTheme } from '../store/themeStore';
 
@@ -45,7 +43,7 @@ export type MainTabParamList = {
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 const TAB_LABELS: Record<keyof MainTabParamList, string> = {
-  Today: 'Hôm nay',
+  Today: 'Mục tiêu',
   Schedule: 'Lịch tập',
   Run: 'Chạy bộ',
   Stats: 'Thống kê',
@@ -70,17 +68,31 @@ const TabSvgIcon = memo(function TabSvgIcon({
 
   switch (routeName) {
     case 'Today':
-      // Icon Ngôi nhà (Hôm nay)
+      // Icon mục tiêu
       return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+          <Circle
+            cx="12"
+            cy="12"
+            r="9"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.16 : 0}
+          />
+          <Circle
+            cx="12"
+            cy="12"
+            r="5"
+            stroke={color}
+            strokeWidth={strokeWidth}
+          />
           <Path
-            d="M3 10.5L12 3L21 10.5V20C21 20.5523 20.5523 21 20 21H15V15C15 14.4477 14.5523 14 14 14H10C9.44772 14 9 14.4477 9 15V21H4C3.44772 21 3 20.5523 3 20V10.5Z"
+            d="M12 12L19 5M15.5 5H19V8.5"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeLinejoin="round"
-            fill={focused ? color : 'none'}
-            fillOpacity={focused ? 0.16 : 0}
           />
         </Svg>
       );
@@ -139,40 +151,42 @@ const TabSvgIcon = memo(function TabSvgIcon({
           />
           <Rect
             x="6"
-            y="11"
+            y="12"
             width="3"
-            height="6"
+            height="7"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.22 : 0}
           />
           <Rect
-            x="10.5"
-            y="6"
+            x="11"
+            y="7"
             width="3"
-            height="11"
+            height="12"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.35 : 0}
           />
           <Rect
-            x="15"
-            y="9"
+            x="16"
+            y="10"
             width="3"
-            height="8"
+            height="9"
             rx="1"
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
+            fillOpacity={focused ? 0.22 : 0}
           />
         </Svg>
       );
 
     case 'Profile':
-    default:
-      // Icon Hồ sơ cá nhân
+      // Icon Hồ sơ người dùng
       return (
         <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
           <Circle
@@ -182,10 +196,10 @@ const TabSvgIcon = memo(function TabSvgIcon({
             stroke={color}
             strokeWidth={strokeWidth}
             fill={focused ? color : 'none'}
-            fillOpacity={focused ? 0.16 : 0}
+            fillOpacity={focused ? 0.2 : 0}
           />
           <Path
-            d="M4.5 20C5.8 16.6 8.6 15 12 15C15.4 15 18.2 16.6 19.5 20"
+            d="M5 20C5 16.5 8 14 12 14C16 14 19 16.5 19 20"
             stroke={color}
             strokeWidth={strokeWidth}
             strokeLinecap="round"
@@ -196,18 +210,17 @@ const TabSvgIcon = memo(function TabSvgIcon({
 });
 
 /**
- * Thanh TabBar tùy chỉnh chuẩn Material 3 / iOS:
- * - Không bị giới hạn bởi khung 24x24px của TabBarIcon mặc định.
- * - Nền tròn nhạt (pill 56x32px) bao trọn icon 24px khi tab được chọn.
- * - Tự động cộng vùng đệm an toàn dưới đáy (useSafeAreaInsets) để không đè lên home indicator.
+ * Thanh điều hướng đáy FitLog tuỳ chỉnh (Custom TabBar):
+ * - Giữ trọn vẹn icon SVG trong vùng vẽ, triệt tiêu lỗi clipping trên Android.
+ * - Khoảng chạm rộng rãi (>= 44px) đúng chuẩn giao diện di động.
  */
-function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
+export function FitLogBottomTabBar({
+  state,
+  descriptors,
+  navigation,
+}: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
-
-  // Đảm bảo luôn có khoảng đệm tối thiểu 10px dưới nhãn tab + phần inset hệ thống
-  const safeBottomPadding = Math.max(insets.bottom, 10) + 4;
-  const tabBarHeight = 60 + safeBottomPadding;
 
   return (
     <View
@@ -216,8 +229,7 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
         {
           backgroundColor: colors.surface,
           borderTopColor: colors.border,
-          height: tabBarHeight,
-          paddingBottom: safeBottomPadding,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : layout.screenPadding,
         },
       ]}
     >
@@ -256,6 +268,7 @@ function FitLogBottomTabBar({ state, descriptors, navigation }: BottomTabBarProp
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={isFocused ? { selected: true } : {}}
+            aria-selected={isFocused}
             accessibilityLabel={options.tabBarAccessibilityLabel ?? label}
             onPress={onPress}
             onLongPress={onLongPress}
@@ -322,7 +335,7 @@ export default function MainTabs() {
       <Tab.Screen
         name="Today"
         component={TodayScreen}
-        options={{ tabBarLabel: 'Hôm nay' }}
+        options={{ tabBarLabel: 'Mục tiêu' }}
       />
       <Tab.Screen
         name="Schedule"
@@ -336,7 +349,7 @@ export default function MainTabs() {
       />
       <Tab.Screen
         name="Stats"
-        component={StatsScreen}
+        component={StatisticsNavigator}
         options={{ tabBarLabel: 'Thống kê' }}
       />
       <Tab.Screen
@@ -377,43 +390,5 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     textAlign: 'center',
     includeFontPadding: false,
-  },
-  placeholderContainer: {
-    flex: 1,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  screenTitle: {
-    fontSize: fontSize.title,
-    fontWeight: fontWeight.bold,
-  },
-  placeholderSub: {
-    fontSize: fontSize.body,
-  },
-  todayCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-  },
-  iconCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  todayTextCol: {
-    flex: 1,
-    gap: 2,
-  },
-  todayBannerTitle: {
-    fontSize: fontSize.body,
-    fontWeight: fontWeight.bold,
-  },
-  todayBannerSub: {
-    fontSize: fontSize.caption,
   },
 });

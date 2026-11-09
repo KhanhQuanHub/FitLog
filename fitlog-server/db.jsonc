@@ -7,18 +7,40 @@
   // Khóa ngoại đặt tên <tênSốÍt>Id (userId, exerciseId...) để dùng
   // được _expand / _embed.
   // ================================================================
-
   // ---------- 1. TÀI KHOẢN (Chức năng 1) ----------
   // Đăng nhập: POST /login {email, password} -> trả về token.
-  // CẢNH BÁO: password chữ thường CHỈ để học/demo. App thật phải băm.
+  // Mật khẩu trong db.json được băm scrypt trước khi server khởi động.
   // role : "user" (người dùng thường) | "admin" (quản trị)
   //        Quyền hạn từng vai trò được kiểm soát trong file auth.js.
   "users": [
-    { "id": 1, "email": "quan@figlog.vn",  "password": "123456",   "fullName": "Nguyễn Khánh Quân", "role": "user",  "createdAt": "2026-10-01T08:00:00.000Z" },
-    { "id": 2, "email": "ha@figlog.vn",    "password": "123456",   "fullName": "Thanh Hà",           "role": "user",  "createdAt": "2026-10-03T09:30:00.000Z" },
-    { "id": 3, "email": "admin@figlog.vn", "password": "admin123", "fullName": "Quản trị viên",      "role": "admin", "createdAt": "2026-09-30T07:00:00.000Z" }
+    {
+      "id": 1,
+      "name": "Nguyễn Khánh Quân",
+      "email": "quan@figlog.vn",
+      "password": "scrypt$16384$8$1$23c1ec8cfa0153b938e8cdcfe012c40b$3c5ae22a68f991133e8a75f8f577ce72c170b4a5e65dca36c1dba30b66c8211b07f0c933de4480dc96a1f6553a8e05db2bbf6ba8ebadd5c48d4d11232c008a32",
+      "fullName": "Nguyễn Khánh Quân",
+      "role": "user",
+      "createdAt": "2026-10-01T08:00:00.000Z"
+    },
+    {
+      "id": 2,
+      "name": "Thanh Hà",
+      "email": "ha@figlog.vn",
+      "password": "scrypt$16384$8$1$f83f0a0f5aea7419a8d50da5b2a9a269$f1f3d545a8d2aaa1b1487ca54ed3cf82db05645e47a28db23a4823f5e0c59cd3dbeb111f7549aa6007c6091d84cf5031d769310474a0f9ed38bc4c308db4d465",
+      "fullName": "Thanh Hà",
+      "role": "user",
+      "createdAt": "2026-10-03T09:30:00.000Z"
+    },
+    {
+      "id": 3,
+      "name": "Quản trị viên",
+      "email": "admin@figlog.vn",
+      "password": "scrypt$16384$8$1$b4196fcd118aaa7fc2dae004c461aba5$f38d99860fc818745112883ee38753d8f5eba8dd97b14adba102c6539d407c869350ddd7139ebefe1144ba41d276929977b59729336de96c11e533e6bc6549ab",
+      "fullName": "Quản trị viên",
+      "role": "admin",
+      "createdAt": "2026-09-30T07:00:00.000Z"
+    }
   ],
-
   // ---------- 2. HỒ SƠ SỨC KHỎE (Chức năng 1) ----------
   // userId            : khóa ngoại -> users.id
   // gender            : "male" | "female" (quyết định hệ số sải chân)
@@ -29,77 +51,360 @@
   // sessionsPerWeek   : số buổi tập cam kết mỗi tuần (2..6)
   // calibratedStrideM : sải chân đã hiệu chuẩn (m), null = chưa hiệu chuẩn
   "profiles": [
-    { "id": 1, "userId": 1, "gender": "male", "heightCm": 175, "weightKg": 60, "bmi": 19.6, "bmiGroup": "normal", "healthCondition": "none", "sessionsPerWeek": 4, "calibratedStrideM": null },
-    { "id": 2, "userId": 2, "gender": "female", "heightCm": 162, "weightKg": 52, "bmi": 19.8, "bmiGroup": "normal", "healthCondition": "joint", "sessionsPerWeek": 3, "calibratedStrideM": null }
+    {
+      "id": 1,
+      "userId": 1,
+      "gender": "male",
+      "heightCm": 175,
+      "weightKg": 60,
+      "bmi": 19.6,
+      "bmiGroup": "normal",
+      "healthCondition": "none",
+      "sessionsPerWeek": 4,
+      "calibratedStrideM": null
+    },
+    {
+      "id": 2,
+      "userId": 2,
+      "gender": "female",
+      "heightCm": 162,
+      "weightKg": 52,
+      "bmi": 19.8,
+      "bmiGroup": "normal",
+      "healthCondition": "joint",
+      "sessionsPerWeek": 3,
+      "calibratedStrideM": null
+    }
   ],
-
   // ---------- 3. LỊCH SỬ CÂN NẶNG ----------
   // Mỗi lần cập nhật cân nặng thì POST thêm 1 dòng (không sửa dòng cũ)
   // để vẽ biểu đồ biến thiên. date: "YYYY-MM-DD".
   "weightHistory": [
-    { "id": 1, "userId": 1, "weightKg": 58, "date": "2026-09-15" },
-    { "id": 2, "userId": 1, "weightKg": 59, "date": "2026-10-01" },
-    { "id": 3, "userId": 1, "weightKg": 60, "date": "2026-10-20" },
-    { "id": 4, "userId": 2, "weightKg": 53, "date": "2026-10-03" },
-    { "id": 5, "userId": 2, "weightKg": 52, "date": "2026-10-24" }
+    {
+      "id": 1,
+      "userId": 1,
+      "weightKg": 58,
+      "date": "2026-09-15"
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "weightKg": 59,
+      "date": "2026-10-01"
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "weightKg": 60,
+      "date": "2026-10-20"
+    },
+    {
+      "id": 4,
+      "userId": 2,
+      "weightKg": 53,
+      "date": "2026-10-03"
+    },
+    {
+      "id": 5,
+      "userId": 2,
+      "weightKg": 52,
+      "date": "2026-10-24"
+    }
   ],
-
   // ---------- 4. DANH MỤC 8 MỤC TIÊU (Chức năng 2) ----------
   // Bảng tham chiếu cố định, app chỉ đọc (GET).
   "goals": [
-    { "id": 1, "code": "weight_loss", "name": "Giảm cân / Đốt mỡ" },
-    { "id": 2, "code": "weight_gain", "name": "Tăng cân lành mạnh" },
-    { "id": 3, "code": "maintenance", "name": "Cân bằng / Duy trì thể trạng" },
-    { "id": 4, "code": "muscle_gain", "name": "Tăng cơ & phát triển sức mạnh" },
-    { "id": 5, "code": "cardio", "name": "Tăng sức bền Cardio" },
-    { "id": 6, "code": "flexibility", "name": "Cải thiện độ linh hoạt & dẻo dai" },
-    { "id": 7, "code": "general", "name": "Tăng cường sức khỏe tổng thể" },
-    { "id": 8, "code": "stress_relief", "name": "Kiểm soát căng thẳng / Thiền vận động" }
+    {
+      "id": 1,
+      "code": "weight_loss",
+      "name": "Giảm cân / Đốt mỡ"
+    },
+    {
+      "id": 2,
+      "code": "weight_gain",
+      "name": "Tăng cân lành mạnh"
+    },
+    {
+      "id": 3,
+      "code": "maintenance",
+      "name": "Cân bằng / Duy trì thể trạng"
+    },
+    {
+      "id": 4,
+      "code": "muscle_gain",
+      "name": "Tăng cơ & phát triển sức mạnh"
+    },
+    {
+      "id": 5,
+      "code": "cardio",
+      "name": "Tăng sức bền Cardio"
+    },
+    {
+      "id": 6,
+      "code": "flexibility",
+      "name": "Cải thiện độ linh hoạt & dẻo dai"
+    },
+    {
+      "id": 7,
+      "code": "general",
+      "name": "Tăng cường sức khỏe tổng thể"
+    },
+    {
+      "id": 8,
+      "code": "stress_relief",
+      "name": "Kiểm soát căng thẳng / Thiền vận động"
+    }
   ],
-
   // ---------- 5. MỤC TIÊU CỦA NGƯỜI D NG ----------
   // targetWeightKg: cân nặng đích | deadlineWeeks: thời hạn (tuần)
   // minMinutesPerWeek: cam kết tối thiểu (phút/tuần)
   "userGoals": [
-    { "id": 1, "userId": 1, "goalId": 2, "targetWeightKg": 65, "deadlineWeeks": 12, "minMinutesPerWeek": 150 },
-    { "id": 2, "userId": 2, "goalId": 6, "targetWeightKg": 52, "deadlineWeeks": 8, "minMinutesPerWeek": 120 }
+    {
+      "id": 1,
+      "userId": 1,
+      "goalId": 2,
+      "targetWeightKg": 65,
+      "deadlineWeeks": 12,
+      "minMinutesPerWeek": 150
+    },
+    {
+      "id": 2,
+      "userId": 2,
+      "goalId": 6,
+      "targetWeightKg": 52,
+      "deadlineWeeks": 8,
+      "minMinutesPerWeek": 120
+    }
   ],
-
   // ---------- 6. THƯ VIỆN BÀI TẬP (Chức năng 3) ----------
   // equipment : "none" | "mat" | "rope" | "machine" | "dumbbell"
   // met       : hệ số MET dùng tính calo
   // impact    : "low" | "high" (high = nhảy bật, hại khớp)
   // sets/reps : số hiệp / số lần (reps = 0 nếu tính theo thời gian)
   // durationSec: giây mỗi hiệp (0 nếu tính theo số lần)
-  // youtubeId : phần sau "v=" trong link YouTube.
+  // youtubeId : ID 11 ký tự hoặc URL YouTube đầy đủ.
   // Cây quyết định: bệnh khớp -> impact=low ; tim mạch -> met<=5.0
   "exercises": [
-    { "id": 1, "name": "Hít đất (Push-up)", "muscleGroup": "Ngực, tay sau", "equipment": "none", "met": 4.5, "impact": "low", "sets": 3, "reps": 12, "durationSec": 0, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 2, "name": "Squat tự trọng", "muscleGroup": "Chân, mông", "equipment": "none", "met": 5.0, "impact": "low", "sets": 3, "reps": 15, "durationSec": 0, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 3, "name": "Jumping Jacks", "muscleGroup": "Toàn thân", "equipment": "none", "met": 8.0, "impact": "high", "sets": 3, "reps": 0, "durationSec": 60, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 4, "name": "Plank", "muscleGroup": "Bụng, core", "equipment": "mat", "met": 4.0, "impact": "low", "sets": 3, "reps": 0, "durationSec": 45, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 5, "name": "Yoga chào mặt trời", "muscleGroup": "Toàn thân", "equipment": "mat", "met": 3.0, "impact": "low", "sets": 1, "reps": 10, "durationSec": 0, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 6, "name": "Nhảy dây", "muscleGroup": "Toàn thân", "equipment": "rope", "met": 10.0, "impact": "high", "sets": 4, "reps": 0, "durationSec": 120, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 7, "name": "Đạp xe tĩnh", "muscleGroup": "Chân", "equipment": "machine", "met": 5.0, "impact": "low", "sets": 1, "reps": 0, "durationSec": 1200, "youtubeId": "YOUTUBE_VIDEO_ID" },
-    { "id": 8, "name": "Chạy bộ tốc độ vừa (8km/h)", "muscleGroup": "Cardio", "equipment": "none", "met": 8.0, "impact": "high", "sets": 1, "reps": 0, "durationSec": 1800, "youtubeId": "YOUTUBE_VIDEO_ID" }
+    {
+      "id": 1,
+      "name": "Hít đất (Push-up)",
+      "muscleGroup": "Ngực, tay sau",
+      "primaryMuscleGroup": "Ngực",
+      "secondaryMuscleGroups": [
+        "Tay sau",
+        "Vai"
+      ],
+      "activityType": "Tập sức mạnh",
+      "equipment": "none",
+      "met": 4.5,
+      "impact": "low",
+      "sets": 3,
+      "reps": 12,
+      "durationSec": 0,
+      "youtubeId": "https://www.youtube.com/watch?v=ejW14LnBDOg"
+    },
+    {
+      "id": 2,
+      "name": "Squat tự trọng",
+      "muscleGroup": "Chân, mông",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông",
+        "Core"
+      ],
+      "activityType": "Tập sức mạnh",
+      "equipment": "none",
+      "met": 5.0,
+      "impact": "low",
+      "sets": 3,
+      "reps": 15,
+      "durationSec": 0,
+      "youtubeId": "https://www.youtube.com/watch?v=lSv_J53UTR0"
+    },
+    {
+      "id": 3,
+      "name": "Jumping Jacks",
+      "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
+      "equipment": "none",
+      "met": 8.0,
+      "impact": "high",
+      "sets": 3,
+      "reps": 0,
+      "durationSec": 60,
+      "youtubeId": "https://www.youtube.com/watch?v=0QsXpN0ZzUw"
+    },
+    {
+      "id": 4,
+      "name": "Plank",
+      "muscleGroup": "Bụng, core",
+      "primaryMuscleGroup": "Bụng",
+      "secondaryMuscleGroups": [
+        "Vai",
+        "Lưng"
+      ],
+      "activityType": "Tập sức mạnh",
+      "equipment": "mat",
+      "met": 4.0,
+      "impact": "low",
+      "sets": 3,
+      "reps": 0,
+      "durationSec": 45,
+      "youtubeId": "https://www.youtube.com/watch?v=euVFnEry8YY"
+    },
+    {
+      "id": 5,
+      "name": "Yoga chào mặt trời",
+      "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Toàn thân",
+      "secondaryMuscleGroups": [
+        "Lưng",
+        "Chân"
+      ],
+      "activityType": "Yoga / Kéo giãn",
+      "equipment": "mat",
+      "met": 3.0,
+      "impact": "low",
+      "sets": 1,
+      "reps": 10,
+      "durationSec": 0,
+      "youtubeId": "https://www.youtube.com/watch?v=-HFrSiz4qgI"
+    },
+    {
+      "id": 6,
+      "name": "Nhảy dây",
+      "muscleGroup": "Toàn thân",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân",
+        "Vai"
+      ],
+      "activityType": "Cardio / HIIT",
+      "equipment": "rope",
+      "met": 10.0,
+      "impact": "high",
+      "sets": 4,
+      "reps": 0,
+      "durationSec": 120,
+      "youtubeId": "https://www.youtube.com/watch?v=jTHDTxf7Yh4"
+    },
+    {
+      "id": 7,
+      "name": "Đạp xe tĩnh",
+      "muscleGroup": "Chân",
+      "primaryMuscleGroup": "Chân",
+      "secondaryMuscleGroups": [
+        "Mông"
+      ],
+      "activityType": "Cardio",
+      "equipment": "machine",
+      "met": 5.0,
+      "impact": "low",
+      "sets": 1,
+      "reps": 0,
+      "durationSec": 1200,
+      "youtubeId": "https://www.youtube.com/watch?v=qXR2YTO40bE"
+    },
+    {
+      "id": 8,
+      "name": "Chạy bộ tốc độ vừa (8km/h)",
+      "muscleGroup": "Cardio",
+      "primaryMuscleGroup": "Cardio",
+      "secondaryMuscleGroups": [
+        "Chân"
+      ],
+      "activityType": "Cardio",
+      "equipment": "none",
+      "met": 8.0,
+      "impact": "high",
+      "sets": 1,
+      "reps": 0,
+      "durationSec": 1800,
+      "youtubeId": "https://www.youtube.com/watch?v=0-5--O_N_-s"
+    }
   ],
-
   // ---------- 7. LỊCH TẬP (Chức năng 3 + 4) ----------
   // userId, exerciseId : khóa ngoại
   // date, time         : "YYYY-MM-DD", "HH:mm"
   // status             : "planned" | "done" | "missed"
   // durationMin        : phút tập thực tế (0 nếu chưa tập)
-  // caloriesBurned     : met * weightKg * (durationMin/60)
+  // durationMin : thời gian thực tế (0 nếu chưa hoàn thành)
+  // plannedDurationMin : thời lượng dự kiến; caloriesBurned chỉ dùng thời gian thực tế
+  // weightKg : cân nặng hồ sơ tại thời điểm ghi nhận buổi đã hoàn thành
   // Thống kê: GET /workouts?userId=1&status=done&date_gte=...&date_lte=...
   "workouts": [
-    { "id": 1, "userId": 1, "exerciseId": 1, "date": "2026-10-26", "time": "18:00", "status": "done", "durationMin": 30, "caloriesBurned": 135, "note": "Tập tại phòng trọ" },
-    { "id": 2, "userId": 1, "exerciseId": 2, "date": "2026-10-27", "time": "18:00", "status": "done", "durationMin": 40, "caloriesBurned": 200, "note": "" },
-    { "id": 3, "userId": 1, "exerciseId": 4, "date": "2026-10-28", "time": "18:30", "status": "missed", "durationMin": 0, "caloriesBurned": 0, "note": "Bận đồ án" },
-    { "id": 4, "userId": 1, "exerciseId": 1, "date": "2026-10-30", "time": "18:00", "status": "planned", "durationMin": 0, "caloriesBurned": 0, "note": "" },
-    { "id": 5, "userId": 2, "exerciseId": 5, "date": "2026-10-27", "time": "20:00", "status": "done", "durationMin": 45, "caloriesBurned": 117, "note": "Giảm đau lưng" },
-    { "id": 6, "userId": 2, "exerciseId": 7, "date": "2026-10-29", "time": "19:00", "status": "planned", "durationMin": 0, "caloriesBurned": 0, "note": "" }
+    {
+      "id": 1,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-10-26",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 30,
+      "caloriesBurned": 135,
+      "note": "Tập tại phòng trọ"
+    },
+    {
+      "id": 2,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-10-27",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 200,
+      "note": ""
+    },
+    {
+      "id": 3,
+      "userId": 1,
+      "exerciseId": 4,
+      "date": "2026-10-28",
+      "time": "18:30",
+      "status": "missed",
+      "durationMin": 0,
+      "caloriesBurned": 0,
+      "note": "Bận đồ án"
+    },
+    {
+      "id": 4,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-10-30",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "caloriesBurned": 0,
+      "note": ""
+    },
+    {
+      "id": 5,
+      "userId": 2,
+      "exerciseId": 5,
+      "date": "2026-10-27",
+      "time": "20:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 117,
+      "note": "Giảm đau lưng"
+    },
+    {
+      "id": 6,
+      "userId": 2,
+      "exerciseId": 7,
+      "date": "2026-10-29",
+      "time": "19:00",
+      "status": "planned",
+      "durationMin": 0,
+      "caloriesBurned": 0,
+      "note": ""
+    }
   ],
-
   // ---------- 8. BUỔI CHẠY BỘ (Chức năng 5 - Pedometer Offline-First) ----------
   // clientId     : mã định danh do app sinh để chống ghi trùng (idempotent)
   // date         : ngày theo GIỜ ĐỊA PHƯƠNG (YYYY-MM-DD), không phải UTC
@@ -137,9 +442,18 @@
       "weightKg": 60,
       "calories": 212,
       "splits": [
-        { "km": 1, "sec": 496 },
-        { "km": 2, "sec": 496 },
-        { "km": 3, "sec": 496 }
+        {
+          "km": 1,
+          "sec": 496
+        },
+        {
+          "km": 2,
+          "sec": 496
+        },
+        {
+          "km": 3,
+          "sec": 496
+        }
       ],
       "note": "Chạy bộ buổi sáng quanh công viên"
     },
@@ -164,11 +478,26 @@
       "weightKg": 60,
       "calories": 301,
       "splits": [
-        { "km": 1, "sec": 472 },
-        { "km": 2, "sec": 472 },
-        { "km": 3, "sec": 472 },
-        { "km": 4, "sec": 472 },
-        { "km": 5, "sec": 472 }
+        {
+          "km": 1,
+          "sec": 472
+        },
+        {
+          "km": 2,
+          "sec": 472
+        },
+        {
+          "km": 3,
+          "sec": 472
+        },
+        {
+          "km": 4,
+          "sec": 472
+        },
+        {
+          "km": 5,
+          "sec": 472
+        }
       ],
       "note": "Hoàn thành mục tiêu 5 km cuối tuần"
     },
@@ -193,10 +522,22 @@
       "weightKg": 60,
       "calories": 290,
       "splits": [
-        { "km": 1, "sec": 385 },
-        { "km": 2, "sec": 385 },
-        { "km": 3, "sec": 385 },
-        { "km": 4, "sec": 385 }
+        {
+          "km": 1,
+          "sec": 385
+        },
+        {
+          "km": 2,
+          "sec": 385
+        },
+        {
+          "km": 3,
+          "sec": 385
+        },
+        {
+          "km": 4,
+          "sec": 385
+        }
       ],
       "note": "Chạy tempo tăng tốc"
     },
@@ -221,10 +562,22 @@
       "weightKg": 60,
       "calories": 251,
       "splits": [
-        { "km": 1, "sec": 439 },
-        { "km": 2, "sec": 439 },
-        { "km": 3, "sec": 439 },
-        { "km": 4, "sec": 439 }
+        {
+          "km": 1,
+          "sec": 439
+        },
+        {
+          "km": 2,
+          "sec": 439
+        },
+        {
+          "km": 3,
+          "sec": 439
+        },
+        {
+          "km": 4,
+          "sec": 439
+        }
       ],
       "note": ""
     },
@@ -249,9 +602,18 @@
       "weightKg": 52,
       "calories": 144,
       "splits": [
-        { "km": 1, "sec": 598 },
-        { "km": 2, "sec": 598 },
-        { "km": 3, "sec": 598 }
+        {
+          "km": 1,
+          "sec": 598
+        },
+        {
+          "km": 2,
+          "sec": 598
+        },
+        {
+          "km": 3,
+          "sec": 598
+        }
       ],
       "note": "Đi bộ nhanh bảo vệ khớp"
     }

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\candidate.json",
+    "sha256": "f7ecdc57569ada92fdc02f1f1b0f2b3f998424d4f167065686d3ba6e206adaee",
+    "bytes": 9566
+  },
+  "artifact": {
+    "path": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\fitlog-system.html",
+    "sha256": "740ef56651e9a09237acfa6fa9b4a3302f75f788dd31cd68a4ad4a8843a375f2",
+    "bytes": 857780
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\fitlog-system.finalize.json",
+    "summaryReceipt": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\fitlog-system.finalize-summary.json",
+    "browserCheckReceipt": "D:\\FitLog\\.archify\\architecture-fitlog-system-20261104-204600\\fitlog-system.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.2.0",
+    "availableVersion": "3.2.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-11-04T13:48:37.782Z",
+    "source": "network",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 3266,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

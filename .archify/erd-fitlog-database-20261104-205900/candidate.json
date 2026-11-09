@@ -1,0 +1,304 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Sơ đồ Thực thể Liên kết (ERD) Cơ sở dữ liệu FitLog",
+    "output": ".archify/erd-fitlog-database-20261104-205900/fitlog-database.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/KhanhQuanHub/FitLog.git",
+      "provider": "github",
+      "revision": "5ffd13e584b386aef4bcabd1a8891eabaeb1520e"
+    },
+    "views": [
+      {
+        "id": "account_health",
+        "label": "1. Tài khoản & Hồ sơ sức khỏe",
+        "focus": ["users", "profiles", "weightHistory"],
+        "note": "Quản lý định danh, phân quyền RBAC (user/admin), chỉ số BMI, bệnh nền (Safety Gate) và lịch sử biến thiên cân nặng."
+      },
+      {
+        "id": "training_plan",
+        "label": "2. Mục tiêu & Lịch tập",
+        "focus": ["users", "userGoals", "goals", "workouts", "exercises"],
+        "note": "Kết nối người dùng với 8 mục tiêu chuẩn và thư viện bài tập (kèm hệ số MET, mức độ va chạm khớp impact và video YouTube)."
+      },
+      {
+        "id": "running_pedometer",
+        "label": "3. Chạy bộ Offline-First",
+        "focus": ["users", "profiles", "runs"],
+        "note": "Lưu trữ buổi chạy từ Pedometer với khóa chống trùng clientId, sải chân strideM (công thức hoặc hiệu chuẩn), nhịp bước và splits."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 76,
+    "gapY": 44
+  },
+  "entities": [
+    {
+      "id": "profiles",
+      "label": "profiles",
+      "sublabel": "Hồ sơ thể trạng & BMI",
+      "tag": "Hồ sơ sức khỏe",
+      "row": 0,
+      "col": 0,
+      "width": 292,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 22, "end_line": 34, "label": "profiles schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "userId", "type": "int", "key": ["fk", "uk"], "references": "users.id" },
+        { "name": "gender", "type": "enum(male,female)" },
+        { "name": "heightCm", "type": "number" },
+        { "name": "weightKg", "type": "number" },
+        { "name": "bmi", "type": "decimal(4,1)" },
+        { "name": "bmiGroup", "type": "enum(4 nhóm)" },
+        { "name": "healthCondition", "type": "enum(Safety Gate)" },
+        { "name": "sessionsPerWeek", "type": "int (2..6)" },
+        { "name": "calibratedStrideM", "type": "decimal(5,3)?" }
+      ]
+    },
+    {
+      "id": "weightHistory",
+      "label": "weightHistory",
+      "sublabel": "Biến thiên cân nặng",
+      "tag": "Hồ sơ sức khỏe",
+      "row": 1,
+      "col": 0,
+      "width": 268,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 36, "end_line": 45, "label": "weightHistory schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "userId", "type": "int", "key": "fk", "references": "users.id" },
+        { "name": "weightKg", "type": "number" },
+        { "name": "date", "type": "date (YYYY-MM-DD)" }
+      ]
+    },
+    {
+      "id": "users",
+      "label": "users",
+      "sublabel": "Tài khoản & RBAC",
+      "tag": "Tài khoản",
+      "row": 0,
+      "col": 1,
+      "width": 264,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 11, "end_line": 20, "label": "users schema" },
+        { "path": "fitlog-server/auth.js", "line": 144, "end_line": 167, "label": "auth & role" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "email", "type": "varchar(255)", "key": "uk" },
+        { "name": "password", "type": "varchar (stripped)" },
+        { "name": "fullName", "type": "varchar(120)" },
+        { "name": "role", "type": "enum(user,admin)" },
+        { "name": "createdAt", "type": "datetime (ISO)" }
+      ]
+    },
+    {
+      "id": "runs",
+      "label": "runs",
+      "sublabel": "Buổi chạy Pedometer",
+      "tag": "Chạy bộ Offline",
+      "row": 1,
+      "col": 1,
+      "width": 280,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 103, "end_line": 145, "label": "runs schema" },
+        { "path": "fitlog-server/validate.js", "line": 14, "end_line": 22, "label": "required fields" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "clientId", "type": "varchar(64)", "key": "uk" },
+        { "name": "userId", "type": "int", "key": "fk", "references": "users.id" },
+        { "name": "date", "type": "date (local)" },
+        { "name": "startedAt", "type": "datetime (ISO)" },
+        { "name": "endedAt", "type": "datetime (ISO)" },
+        { "name": "source", "type": "enum(pedometer,gps)" },
+        { "name": "steps", "type": "int (0..100000)" },
+        { "name": "strideM", "type": "decimal(5,3)" },
+        { "name": "strideSource", "type": "enum(formula,calib)" },
+        { "name": "distanceKm", "type": "decimal(6,2)" },
+        { "name": "durationSec", "type": "int (10..21600)" },
+        { "name": "pausedSec", "type": "int" },
+        { "name": "avgSpeedKmh", "type": "decimal(5,2) (<=25)" },
+        { "name": "paceSecPerKm", "type": "int?" },
+        { "name": "cadenceSpm", "type": "int" },
+        { "name": "met", "type": "decimal(5,2)" },
+        { "name": "weightKg", "type": "number" },
+        { "name": "calories", "type": "int (0..3000)" },
+        { "name": "splits", "type": "json[{km,sec}]" },
+        { "name": "note", "type": "text" }
+      ]
+    },
+    {
+      "id": "userGoals",
+      "label": "userGoals",
+      "sublabel": "Cam kết mục tiêu",
+      "tag": "Kế hoạch cá nhân",
+      "row": 0,
+      "col": 2,
+      "width": 264,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 60, "end_line": 66, "label": "userGoals schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "userId", "type": "int", "key": "fk", "references": "users.id" },
+        { "name": "goalId", "type": "int", "key": "fk", "references": "goals.id" },
+        { "name": "targetWeightKg", "type": "number" },
+        { "name": "deadlineWeeks", "type": "int" },
+        { "name": "minMinutesPerWeek", "type": "int" }
+      ]
+    },
+    {
+      "id": "workouts",
+      "label": "workouts",
+      "sublabel": "Lịch tập & Calo",
+      "tag": "Kế hoạch cá nhân",
+      "row": 1,
+      "col": 2,
+      "width": 264,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 87, "end_line": 101, "label": "workouts schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "userId", "type": "int", "key": "fk", "references": "users.id" },
+        { "name": "exerciseId", "type": "int", "key": "fk", "references": "exercises.id" },
+        { "name": "date", "type": "date (YYYY-MM-DD)" },
+        { "name": "time", "type": "time (HH:mm)" },
+        { "name": "status", "type": "enum(planned,done,missed)" },
+        { "name": "durationMin", "type": "int" },
+        { "name": "caloriesBurned", "type": "int" },
+        { "name": "note", "type": "text" }
+      ]
+    },
+    {
+      "id": "goals",
+      "label": "goals",
+      "sublabel": "8 mục tiêu chuẩn",
+      "tag": "Danh mục chuẩn",
+      "row": 0,
+      "col": 3,
+      "width": 250,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 47, "end_line": 58, "label": "goals schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "code", "type": "varchar(40)", "key": "uk" },
+        { "name": "name", "type": "varchar(120)" }
+      ]
+    },
+    {
+      "id": "exercises",
+      "label": "exercises",
+      "sublabel": "Thư viện bài tập",
+      "tag": "Danh mục chuẩn",
+      "row": 1,
+      "col": 3,
+      "width": 264,
+      "sources": [
+        { "path": "fitlog-server/db.jsonc", "line": 68, "end_line": 85, "label": "exercises schema" }
+      ],
+      "attributes": [
+        { "name": "id", "type": "int", "key": "pk" },
+        { "name": "name", "type": "varchar(120)" },
+        { "name": "muscleGroup", "type": "varchar(80)" },
+        { "name": "equipment", "type": "enum(none,mat,rope...)" },
+        { "name": "met", "type": "decimal(4,1)" },
+        { "name": "impact", "type": "enum(low,high)" },
+        { "name": "sets", "type": "int" },
+        { "name": "reps", "type": "int" },
+        { "name": "durationSec", "type": "int" },
+        { "name": "youtubeId", "type": "varchar(32)" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "profiles_user",
+      "from": "profiles",
+      "to": "users",
+      "fromCardinality": "one",
+      "toCardinality": "one"
+    },
+    {
+      "id": "weight_history_user",
+      "from": "weightHistory",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "runs_user",
+      "from": "runs",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "user_goals_user",
+      "from": "userGoals",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "workouts_user",
+      "from": "workouts",
+      "to": "users",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "user_goals_goal",
+      "from": "userGoals",
+      "to": "goals",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    },
+    {
+      "id": "workouts_exercise",
+      "from": "workouts",
+      "to": "exercises",
+      "fromCardinality": "many",
+      "toCardinality": "one"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Khóa & Quy tắc sở hữu (RBAC)",
+      "items": [
+        "users là bảng trung tâm: 5 bảng cá nhân (profiles, weightHistory, runs, userGoals, workouts) đều gắn khóa ngoại userId.",
+        "Middleware auth.js tự động ép userId theo chủ sở hữu token khi truy vấn hoặc ghi trên 5 bảng OWNED.",
+        "2 bảng danh mục (goals, exercises) thuộc nhóm PUBLIC_READ: mọi người dùng đều đọc được, chỉ admin được phép ghi."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Ràng buộc toàn vẹn bảng runs (HTTP 422)",
+      "items": [
+        "Khóa clientId (r_<timestamp>_<rand>) kết hợp userId giúp chống ghi trùng (Idempotent) khi mạng chập chờn retry.",
+        "Kiểm tra miền giá trị: steps [0..100000], durationSec [10..21600], avgSpeedKmh [0..25], calories [0..3000].",
+        "Kiểm tra công thức vật lý: |distanceKm - steps * strideM / 1000| <= 0.05."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Cây quyết định Y tế & Công thức Calo",
+      "items": [
+        "profiles.healthCondition lọc exercises: bệnh khớp (joint) chỉ lấy impact = low; bệnh tim mạch (cardio) giới hạn met <= 5.0.",
+        "workouts.caloriesBurned tính theo met * weightKg * (durationMin / 60).",
+        "weightHistory chỉ thêm dòng mới (append-only) mỗi lần cập nhật cân nặng để vẽ biểu đồ xu hướng."
+      ]
+    }
+  ]
+}

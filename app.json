@@ -36,7 +36,8 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-sqlite",
@@ -44,6 +45,7 @@
       "expo-secure-store",
       "expo-status-bar",
       "expo-font",
+      "expo-notifications",
       [
         "expo-sensors",
         {

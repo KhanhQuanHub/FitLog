@@ -12,6 +12,8 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ChangePasswordScreen from '../screens/auth/ChangePasswordScreen';
 import MainTabs from './MainTabs';
 import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../store/themeStore';
@@ -22,7 +24,9 @@ import { useTraining } from '../store/TrainingContext';
 export type RootStackParamList = {
   Login: undefined;
   Register: undefined;
+  ForgotPassword: undefined;
   Main: undefined;
+  ChangePassword: undefined;
   Onboarding: undefined;
   EditTraining: undefined;
 };
@@ -69,12 +73,14 @@ export default function RootNavigator() {
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
         </>
       ) : !setup ? (
         <Stack.Screen name="Onboarding" component={TrainingSetupScreen} />
       ) : (
         <>
           <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
           <Stack.Screen name="EditTraining" component={TrainingSetupScreen} />
         </>
       )}

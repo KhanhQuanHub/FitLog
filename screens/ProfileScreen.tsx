@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -12,6 +12,10 @@ import { useAuthStore } from '../store/authStore';
 import { useTraining } from '../store/TrainingContext';
 import { useTheme } from '../store/themeStore';
 import Button from '../components/ui/Button';
+import TrainingSetupScreen from './TrainingSetupScreen';
+import { getWorkouts } from '../services/api';
+import { localDateString } from '../utils/dateLocal';
+import { getWorkoutRemindersEnabled, setWorkoutRemindersEnabled, syncWorkoutReminders } from '../services/workoutReminders';
 
 const THEME_MODES: { mode: ThemeMode; label: string }[] = [
   { mode: 'light', label: 'Sáng' }, { mode: 'dark', label: 'Tối' }, { mode: 'system', label: 'Tự động' },
@@ -19,16 +23,76 @@ const THEME_MODES: { mode: ThemeMode; label: string }[] = [
 
 export default function ProfileScreen() {
   const { user, logout } = useAuthStore();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { setup } = useTraining();
   const { colors, themeMode, setThemeMode } = useTheme();
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [editingSetup, setEditingSetup] = useState(false);
   const [reminderEnabled, setReminderEnabled] = useState(true);
   const [logoutVisible, setLogoutVisible] = useState(false);
   const [showSurvey, setShowSurvey] = useState(false);
-  if (!user || !setup) return null;
+  const [reminderBusy, setReminderBusy] = useState(false);
+  const [reminderError, setReminderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id === undefined || user?.id === null) return;
+    let active = true;
+    getWorkoutRemindersEnabled(user.id)
+      .then((enabled) => {
+        if (active) setReminderEnabled(enabled);
+      })
+      .catch((error) => {
+        if (active)
+          setReminderError(
+            error instanceof Error ? error.message : 'Không tải được cài đặt nhắc lịch.'
+          );
+      });
+    return () => {
+      active = false;
+    };
+  }, [user?.id]);
+
+  if (!user) return null;
+  if (!setup || editingSetup) {
+    const mode = setup ? 'EditTraining' : 'Onboarding';
+    return (
+      <TrainingSetupScreen
+        navigation={{ goBack: () => setEditingSetup(false) } as never}
+        route={{ key: mode, name: mode } as never}
+      />
+    );
+  }
   const bmi = calculateBmi(setup.weight, setup.height, colors);
   const initial = user.fullName.trim().split(' ').pop()?.charAt(0).toUpperCase() || 'F';
   const strideCm = Math.round(setup.height * (setup.gender === 'Nữ' ? 0.413 : 0.415) * 10) / 10;
+
+  const updateReminderPreference = async (enabled: boolean) => {
+    setReminderBusy(true);
+    setReminderError(null);
+    try {
+      await setWorkoutRemindersEnabled(user.id, enabled);
+      setReminderEnabled(enabled);
+      if (enabled) {
+        const from = localDateString();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 60);
+        const upcoming = await getWorkouts(user.id, from, localDateString(endDate));
+        const result = await syncWorkoutReminders(
+          user.id,
+          Array.isArray(upcoming) ? upcoming : [],
+          true
+        );
+        if (!result.permissionGranted) {
+          setReminderError(Platform.OS === 'web'
+            ? 'Nhắc lịch tập chỉ khả dụng trên ứng dụng điện thoại.'
+            : 'Đã bật nhắc lịch nhưng chưa có quyền gửi thông báo. Hãy cấp quyền cho FitLog trong cài đặt điện thoại.');
+        }
+      }
+    } catch (error: unknown) {
+      setReminderError(error instanceof Error ? error.message : 'Chưa cập nhật được cài đặt nhắc lịch.');
+    } finally {
+      setReminderBusy(false);
+    }
+  };
 
   return <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
     <ScrollView contentContainerStyle={styles.scroll}>
@@ -42,20 +106,31 @@ export default function ProfileScreen() {
             <Text style={[styles.statValue, { color: colors.text }]}>{value}</Text><Text style={[styles.small, { color: colors.textMuted }]}>{label}</Text>
           </View>)}
         </View>
-        <Button title="Chỉnh sửa" accessibilityLabel="Thiết lập lại chỉ số & vùng cơ" icon="options-outline" onPress={() => navigation.navigate('EditTraining')} />
+        <Button title="Chỉnh sửa" accessibilityLabel="Thiết lập lại chỉ số & vùng cơ" icon="options-outline" onPress={() => setEditingSetup(true)} />
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Thông tin</Text>
-          {setup.goalAnswers && <Text numberOfLines={2} style={[styles.text, { color: colors.textSecondary }]}>{answerSummary(setup.goalAnswers, 'goals')}</Text>}
-          <Text style={[styles.text, { color: colors.textSecondary }]}>{setup.gender} · {setup.height} cm · {setup.sessions} buổi/tuần</Text>
-          <Text style={[styles.text, { color: colors.textSecondary }]}>Sức khỏe: {healthLabel(setup.conditions)}</Text>
-          {setup.conditions.includes('other') && <Text style={[styles.text, { color: colors.textSecondary }]}>{setup.healthNote}</Text>}
+          {setup.goalAnswers && <Text numberOfLines={2} style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Mục tiêu:</Text> {answerSummary(setup.goalAnswers, 'goals')}</Text>}
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Giới tính:</Text> {setup.gender}</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Chiều cao:</Text> {setup.height} cm</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Tần suất:</Text> {setup.sessions} buổi/tuần</Text>
+          <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Sức khỏe:</Text> {healthLabel(setup.conditions)}</Text>
+          {setup.conditions.includes('other') && !!setup.healthNote && <Text style={[styles.text, { color: colors.textSecondary }]}><Text style={styles.infoLabel}>Ghi chú sức khỏe:</Text> {setup.healthNote}</Text>}
           <Pressable accessibilityRole="button" accessibilityLabel="Xem khảo sát đã lưu" accessibilityState={{ expanded: showSurvey }} aria-expanded={showSurvey} onPress={() => setShowSurvey(value => !value)} style={styles.row}>
             <Text style={[styles.text, { color: colors.text }]}>Khảo sát</Text><Ionicons name={showSurvey ? 'chevron-up' : 'chevron-down'} size={20} color={colors.textMuted} />
           </Pressable>
           {showSurvey && <>
-            {setup.goalAnswers && TRAINING_QUESTIONS.map(question => <Text key={question.id} style={[styles.small, { color: colors.textSecondary }]}>{question.title} {answerSummary(setup.goalAnswers!, question.id)}</Text>)}
-            <Text style={[styles.small, { color: colors.textSecondary }]}>Vùng cơ: {setup.muscles.map(muscleLabel).join(', ')}</Text>
-            <Text style={[styles.small, { color: colors.textMuted }]}>Sải chân ước tính: {strideCm} cm · {setup.minutes} phút/buổi</Text>
+            {setup.goalAnswers && TRAINING_QUESTIONS.map(question => <View key={question.id} style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>{question.title}</Text>
+              <Text style={[styles.small, { color: colors.textSecondary }]}>{answerSummary(setup.goalAnswers!, question.id) || 'Chưa có câu trả lời'}</Text>
+            </View>)}
+            <View style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>Vùng cơ</Text>
+              <Text style={[styles.small, { color: colors.textSecondary }]}>{setup.muscles.map(muscleLabel).join(', ') || 'Chưa chọn vùng cơ'}</Text>
+            </View>
+            <View style={styles.surveyAnswer}>
+              <Text style={[styles.surveyQuestion, { color: colors.text }]}>Thông tin bổ sung</Text>
+              <Text style={[styles.small, { color: colors.textMuted }]}>Sải chân ước tính: {strideCm} cm · {setup.minutes} phút/buổi</Text>
+            </View>
           </>}
         </View>
         <View style={[styles.panel, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -64,9 +139,11 @@ export default function ProfileScreen() {
             style={[styles.themeButton, { backgroundColor: item.mode === themeMode ? colors.primaryLight : colors.surfaceAlt }]}>
             <Text style={[styles.text, { color: colors.text }]}>{item.label}</Text>
           </Pressable>)}</View>
-          <View style={styles.row}><Text style={[styles.text, { color: colors.text }]}>Nhắc nhở luyện tập</Text><Switch accessibilityLabel="Nhắc nhở luyện tập" value={reminderEnabled} onValueChange={setReminderEnabled} trackColor={{ true: colors.primary }} /></View>
+          <View style={styles.row}><Text style={[styles.text, { color: colors.text }]}>Nhắc nhở luyện tập</Text><Switch accessibilityLabel="Nhắc nhở luyện tập" value={reminderEnabled} disabled={reminderBusy} onValueChange={value => void updateReminderPreference(value)} trackColor={{ true: colors.primary }} /></View>
+          {reminderError && <Text accessibilityRole="alert" style={[styles.small, { color: colors.danger }]}>{reminderError}</Text>}
         </View>
         <Text style={[styles.small, { color: colors.textMuted }]}>Gợi ý tham khảo, không thay thế tư vấn y tế.</Text>
+        <Button title="Đổi mật khẩu" variant="secondary" icon="lock-closed-outline" onPress={() => navigation.navigate('ChangePassword')} />
         <Button title="Đăng xuất" variant="danger" icon="log-out-outline" onPress={() => setLogoutVisible(true)} />
       </View>
     </ScrollView>
@@ -92,6 +169,9 @@ const styles = StyleSheet.create({
   stat: { flex: 1, alignItems: 'center', gap: spacing.xs }, statValue: { fontSize: fontSize.title, fontWeight: fontWeight.bold },
   panel: { padding: spacing.lg, borderWidth: 1, borderRadius: radius.lg, gap: spacing.md },
   sectionTitle: { fontSize: fontSize.subtitle, fontWeight: fontWeight.bold }, text: { fontSize: fontSize.body, lineHeight: 25 }, small: { fontSize: fontSize.caption, lineHeight: 22 },
+  infoLabel: { fontWeight: fontWeight.bold },
+  surveyAnswer: { gap: spacing.xs },
+  surveyQuestion: { fontSize: fontSize.caption, fontWeight: fontWeight.bold, lineHeight: 22 },
   themeRow: { flexDirection: 'row', gap: spacing.sm }, themeButton: { flex: 1, minHeight: layout.minTouchSize, alignItems: 'center', justifyContent: 'center', borderRadius: radius.md },
   row: { minHeight: layout.minTouchSize, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
   overlay: { flex: 1, padding: spacing.xl, justifyContent: 'center', alignItems: 'center' },

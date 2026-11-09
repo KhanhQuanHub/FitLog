@@ -30,6 +30,14 @@ export type LoginFormData = z.input<typeof loginSchema>;
 export type LoginParsedData = z.output<typeof loginSchema>;
 
 // 2. Schema màn hình Đăng ký (thống nhất quy tắc giữa App và Backend)
+export const passwordFieldSchema = z
+  .string()
+  .min(1, 'Vui lòng nhập mật khẩu')
+  .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
+  .regex(/[A-Z]/, 'Mật khẩu cần có ít nhất 1 chữ hoa')
+  .regex(/[a-z]/, 'Mật khẩu cần có ít nhất 1 chữ thường')
+  .regex(/[0-9]/, 'Mật khẩu cần có ít nhất 1 chữ số');
+
 export const registerSchema = z
   .object({
     fullName: z
@@ -39,13 +47,7 @@ export const registerSchema = z
       .min(2, 'Họ và tên cần ít nhất 2 ký tự')
       .max(60, 'Họ và tên không quá 60 ký tự'),
     email: emailFieldSchema,
-    password: z
-      .string()
-      .min(1, 'Vui lòng nhập mật khẩu')
-      .min(8, 'Mật khẩu phải có ít nhất 8 ký tự')
-      .regex(/[A-Z]/, 'Mật khẩu cần có ít nhất 1 chữ hoa')
-      .regex(/[a-z]/, 'Mật khẩu cần có ít nhất 1 chữ thường')
-      .regex(/[0-9]/, 'Mật khẩu cần có ít nhất 1 chữ số'),
+    password: passwordFieldSchema,
     confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu'),
     // Bước 2 tùy chọn cho FitLog (chiều cao & cân nặng để tính BMI / sải chân)
     heightCm: z
@@ -72,6 +74,23 @@ export const registerSchema = z
 
 export type RegisterFormData = z.input<typeof registerSchema>;
 export type RegisterParsedData = z.output<typeof registerSchema>;
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, 'Vui lòng nhập mật khẩu hiện tại'),
+    newPassword: passwordFieldSchema,
+    confirmPassword: z.string().min(1, 'Vui lòng nhập lại mật khẩu mới'),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Mật khẩu nhập lại không khớp',
+  })
+  .refine((data) => data.newPassword !== data.currentPassword, {
+    path: ['newPassword'],
+    message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
+  });
+
+export type ChangePasswordFormData = z.input<typeof changePasswordSchema>;
 
 /**
  * Bộ Resolver an toàn cho react-hook-form sử dụng schema.safeParseAsync():

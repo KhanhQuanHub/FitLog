@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { fontSize, fontWeight, layout, radius, spacing } from '../constants/theme';
-import { answerSummary, recommendTraining } from '../domain/training';
+import { WEEKDAYS, answerSummary, buildWeeklySchedule, recommendTraining } from '../domain/training';
 import { useTraining } from '../store/TrainingContext';
 import { useTheme } from '../store/themeStore';
 import BodyMap from '../components/training/BodyMap';
@@ -26,6 +26,10 @@ export default function TodayScreen() {
     );
   }
   const plan = recommendTraining(setup);
+  const day = (new Date().getDay() + 6) % WEEKDAYS.length;
+  const schedule = buildWeeklySchedule(setup.sessions, plan.exercises);
+  const sessionIndex = schedule.findIndex(session => session.day === day);
+  const session = schedule[sessionIndex];
   return <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]} edges={['top', 'left', 'right']}>
     <ScrollView contentContainerStyle={styles.scroll}>
       <View style={styles.content}>
@@ -43,9 +47,16 @@ export default function TodayScreen() {
           </View>
         </View>
         <BodyMap selected={setup.muscles} emphasized={plan.priorityMuscles} compact />
-        <Button title="Điều chỉnh" accessibilityLabel="Thay đổi chỉ số & vùng tập" variant="secondary" onPress={() => setEditingSetup(true)} icon="options-outline" />
-        <Text style={[styles.planTitle, { color: colors.text }]}>{plan.exercises.length} bài gợi ý</Text>
-        <ExerciseList setup={setup} />
+        <Button title="Điều chỉnh" accessibilityLabel="Thay đổi chỉ số & vùng tập" variant="secondary" onPress={() => navigation.navigate('EditTraining')} icon="options-outline" />
+        <View style={[styles.hero, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.note, { color: colors.textSecondary }]}>{WEEKDAYS[day]}</Text>
+          <Text style={[styles.planTitle, { color: colors.text }]}>
+            {session ? `Buổi ${sessionIndex + 1} · ${session.exercises.length} bài` : 'Ngày nghỉ'}
+          </Text>
+          {session ? <ExerciseList key={day} exercises={session.exercises} /> : (
+            <Text style={[styles.note, { color: colors.textSecondary }]}>Xem tab Lịch tập để biết các buổi trong tuần.</Text>
+          )}
+        </View>
         <TrainingDetails setup={setup} />
         <Text style={[styles.note, { color: colors.textMuted }]}>Gợi ý tham khảo, không thay thế tư vấn chuyên gia.</Text>
       </View>

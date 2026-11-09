@@ -341,3 +341,17 @@ export function recommendTraining(setup: TrainingSetup) {
         : 'Bạn đã tập thường xuyên: mỗi vùng cơ có một bài, gợi ý hai hiệp.',
   };
 }
+
+export const WEEKDAYS = ['Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy', 'Chủ nhật'];
+export type SuggestedExercise = ReturnType<typeof recommendTraining>['exercises'][number];
+
+export function buildWeeklySchedule(sessions: number, exercises: SuggestedExercise[]) {
+  if (exercises.length === 0) return [];
+
+  return Array.from({ length: sessions }, (_, index) => ({
+    day: Math.floor(index * WEEKDAYS.length / sessions),
+    exercises: exercises.length < sessions
+      ? [exercises[index % exercises.length]]
+      : exercises.filter((_, exerciseIndex) => exerciseIndex % sessions === index),
+  }));
+}

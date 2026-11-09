@@ -9,7 +9,7 @@
   // ================================================================
   // ---------- 1. TÀI KHOẢN (Chức năng 1) ----------
   // Đăng nhập: POST /login {email, password} -> trả về token.
-  // CẢNH BÁO: password chữ thường CHỈ để học/demo. App thật phải băm.
+  // Mật khẩu trong db.json được băm scrypt trước khi server khởi động.
   // role : "user" (người dùng thường) | "admin" (quản trị)
   //        Quyền hạn từng vai trò được kiểm soát trong file auth.js.
   "users": [
@@ -17,7 +17,7 @@
       "id": 1,
       "name": "Nguyễn Khánh Quân",
       "email": "quan@figlog.vn",
-      "password": "123456",
+      "password": "scrypt$16384$8$1$23c1ec8cfa0153b938e8cdcfe012c40b$3c5ae22a68f991133e8a75f8f577ce72c170b4a5e65dca36c1dba30b66c8211b07f0c933de4480dc96a1f6553a8e05db2bbf6ba8ebadd5c48d4d11232c008a32",
       "fullName": "Nguyễn Khánh Quân",
       "role": "user",
       "createdAt": "2026-10-01T08:00:00.000Z"
@@ -26,7 +26,7 @@
       "id": 2,
       "name": "Thanh Hà",
       "email": "ha@figlog.vn",
-      "password": "123456",
+      "password": "scrypt$16384$8$1$f83f0a0f5aea7419a8d50da5b2a9a269$f1f3d545a8d2aaa1b1487ca54ed3cf82db05645e47a28db23a4823f5e0c59cd3dbeb111f7549aa6007c6091d84cf5031d769310474a0f9ed38bc4c308db4d465",
       "fullName": "Thanh Hà",
       "role": "user",
       "createdAt": "2026-10-03T09:30:00.000Z"
@@ -35,7 +35,7 @@
       "id": 3,
       "name": "Quản trị viên",
       "email": "admin@figlog.vn",
-      "password": "admin123",
+      "password": "scrypt$16384$8$1$b4196fcd118aaa7fc2dae004c461aba5$f38d99860fc818745112883ee38753d8f5eba8dd97b14adba102c6539d407c869350ddd7139ebefe1144ba41d276929977b59729336de96c11e533e6bc6549ab",
       "fullName": "Quản trị viên",
       "role": "admin",
       "createdAt": "2026-09-30T07:00:00.000Z"

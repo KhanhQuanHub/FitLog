@@ -281,7 +281,9 @@ export async function request(path, options = {}) {
     // Xử lý lỗi máy chủ 5xx
     if (response.status >= 500) {
       throw new ApiError(
-        'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
+        path === '/password-reset' && typeof payload?.error === 'string'
+          ? payload.error
+          : 'Máy chủ đang gặp sự cố tạm thời. Vui lòng thử lại.',
         response.status,
         payload,
         'SERVER'
@@ -320,56 +322,7 @@ export async function request(path, options = {}) {
 }
 
 /**
- * Tạo token giả định dạng <base64url>.demo khi chạy json-server thuần (không qua auth.js)
- * để `decodeTokenPayload()` và `verifyStoredSession()` hoạt động đồng nhất.
- *
- * @param {Record<string, any>} user
- * @returns {string}
- */
-function buildFallbackDemoToken(user) {
-  const payloadJson = JSON.stringify({
-    id: user?.id ?? 1,
-    role: user?.role || 'user',
-    exp: Date.now() + 7 * 24 * 60 * 60 * 1000,
-  });
-
-  const globalBuffer = /** @type {any} */ (globalThis).Buffer;
-  if (typeof globalBuffer !== 'undefined' && typeof globalBuffer.from === 'function') {
-    return `${globalBuffer.from(payloadJson, 'utf8').toString('base64url')}.demo`;
-  }
-
-  const utf8Bytes = encodeURIComponent(payloadJson).replace(
-    /%([0-9A-F]{2})/g,
-    (_m, hex) => String.fromCharCode(parseInt(hex, 16))
-  );
-
-  if (typeof globalThis.btoa === 'function') {
-    const b64 = globalThis.btoa(utf8Bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    return `${b64}.demo`;
-  }
-
-  let out = '';
-  for (let i = 0; i < utf8Bytes.length; i += 3) {
-    const c1 = utf8Bytes.charCodeAt(i);
-    const has2 = i + 1 < utf8Bytes.length;
-    const has3 = i + 2 < utf8Bytes.length;
-    const c2 = has2 ? utf8Bytes.charCodeAt(i + 1) : 0;
-    const c3 = has3 ? utf8Bytes.charCodeAt(i + 2) : 0;
-
-    out += BASE64_CHARS.charAt(c1 >> 2);
-    out += BASE64_CHARS.charAt(((c1 & 3) << 4) | (c2 >> 4));
-    if (has2) out += BASE64_CHARS.charAt(((c2 & 15) << 2) | (c3 >> 6));
-    if (has3) out += BASE64_CHARS.charAt(c3 & 63);
-  }
-  return `${out.replace(/\+/g, '-').replace(/\//g, '_')}.demo`;
-}
-
-/**
- * Đăng nhập qua json-server:
- * - Gọi `GET {BASE_URL}/users?email=...&password=...` (timeout 10s bằng AbortController).
- * - Nếu mảng trả về có phần tử: lấy thông tin user + token (token thật từ auth.js hoặc
- *   token giả định dạng chuẩn khi chạy json-server thuần), lưu vào expo-secure-store.
- * - Nếu mảng rỗng: báo lỗi "Email hoặc mật khẩu không đúng" bằng tiếng Việt.
+ * Đăng nhập bằng POST /login để không đưa mật khẩu vào URL hoặc log truy cập.
  *
  * @param {string} email
  * @param {string} password
@@ -377,32 +330,38 @@ function buildFallbackDemoToken(user) {
  */
 export async function login(email, password) {
   const cleanEmail = String(email || '').trim().toLowerCase();
-  const queryPath = `/users?email=${encodeURIComponent(cleanEmail)}&password=${encodeURIComponent(
-    String(password || '')
-  )}`;
-
-  const matchedList = await request(queryPath, {
-    method: 'GET',
+  const result = await request('/login', {
+    method: 'POST',
     skipAuth: true,
+    body: JSON.stringify({ email: cleanEmail, password }),
   });
 
-  if (!Array.isArray(matchedList) || matchedList.length === 0) {
-    throw new ApiError('Email hoặc mật khẩu không đúng', 401, null, 'AUTH');
+  if (!result || typeof result.token !== 'string' || !result.token || !result.user) {
+    throw new ApiError('Phản hồi đăng nhập từ máy chủ không hợp lệ', 500, result, 'SERVER');
   }
 
-  const rawUser = matchedList[0];
-  const token =
-    typeof rawUser?.token === 'string' && rawUser.token.trim() !== ''
-      ? rawUser.token
-      : buildFallbackDemoToken(rawUser);
-
-  await setAuthToken(token);
-
-  const { password: _removedPassword, token: _removedToken, ...safeUser } = rawUser || {};
+  await setAuthToken(result.token);
+  const { password: _removedPassword, ...safeUser } = result.user;
   return {
     ...safeUser,
     fullName: safeUser.fullName || safeUser.name || 'Người dùng FitLog',
   };
+}
+
+export async function requestPasswordReset(email) {
+  const cleanEmail = String(email || '').trim().toLowerCase();
+  return request('/password-reset', {
+    method: 'POST',
+    skipAuth: true,
+    body: JSON.stringify({ email: cleanEmail }),
+  });
+}
+
+export async function changePassword(currentPassword, newPassword, confirmPassword) {
+  return request('/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
+  });
 }
 
 /**

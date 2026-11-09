@@ -7,8 +7,8 @@
 // - Hiển thị danh sách chi tiết từng buổi tập trong kỳ.
 // ============================================================================
 
-import { StatisticsActivityRow, StatisticsBarChart } from '../../components/statistics';
-import type { StatisticsChartPoint, StatisticsMetricCardProps } from '../../components/statistics';
+import { StatisticsActivityRow } from '../../components/statistics';
+import type { StatisticsMetricCardProps } from '../../components/statistics';
 import {
   formatStatisticsNumber,
   formatStatisticsValue,
@@ -90,17 +90,6 @@ function ScheduleContent({
     },
   ];
 
-  // Chuẩn bị danh sách các điểm cột cho biểu đồ "Buổi tập theo nhóm cơ"
-  const muscleGroupPoints: StatisticsChartPoint[] = schedule.byMuscleGroup.map(
-    (group, index) => ({
-      key: group.key,
-      label: group.label,
-      axisLabel: String(index + 1),
-      value: group.sessions,
-      complete: snapshot.workouts.complete,
-    })
-  );
-
   const hasUnknownWorkoutRecords =
     schedule.counts.unknown > 0 || report.quality.invalidWorkoutDates > 0;
 
@@ -169,21 +158,13 @@ function ScheduleContent({
       {/* 1. Lưới 4 chỉ số tổng quan lịch tập */}
       <StatisticsMetricGrid items={scheduleSummaryItems} />
 
-      {/* 2. Biểu đồ cột số buổi hoàn thành theo từng mốc thời gian */}
-      <StatisticsBarChart
-        width={chartWidth}
-        title="Buổi theo lịch đã hoàn thành"
-        unit="count"
-        points={series('schedule', 'sessions')}
-      />
-
       {hasUnknownWorkoutRecords ? (
         <StatisticsInfo>
           Có buổi chưa rõ trạng thái hoặc ngày nên chưa thể đánh giá đầy đủ.
         </StatisticsInfo>
       ) : null}
 
-      {/* 3. Thống kê theo từng bài tập */}
+      {/* 2. Thống kê theo từng bài tập */}
       <StatisticsSection title="Bài tập thường thực hiện">
         <StatisticsHistory
           records={schedule.byExercise}
@@ -192,22 +173,20 @@ function ScheduleContent({
         />
       </StatisticsSection>
 
-      {/* 4. Phân bố buổi tập theo nhóm cơ */}
+      {/* 3. Phân bố buổi tập theo nhóm cơ */}
       <StatisticsSection title="Phân bố nhóm cơ">
-        <StatisticsBarChart
-          width={chartWidth}
-          title="Buổi tập theo nhóm cơ"
-          unit="count"
-          points={muscleGroupPoints}
-        />
-        {schedule.byMuscleGroup.map((group, index) => (
-          <StatisticsInfo key={group.key}>
-            {index + 1}. {group.label}: {group.sessions} buổi
-          </StatisticsInfo>
-        ))}
+        {schedule.byMuscleGroup.length === 0 ? (
+          <StatisticsInfo>Chưa có buổi hoàn thành để phân bố nhóm cơ.</StatisticsInfo>
+        ) : (
+          schedule.byMuscleGroup.map((group, index) => (
+            <StatisticsInfo key={group.key}>
+              {index + 1}. {group.label}: {group.sessions} buổi
+            </StatisticsInfo>
+          ))
+        )}
       </StatisticsSection>
 
-      {/* 5. Danh sách tất cả các buổi tập trong kỳ */}
+      {/* 4. Danh sách tất cả các buổi tập trong kỳ */}
       <StatisticsSection title="Các buổi trong kỳ">
         <StatisticsHistory
           records={schedule.records.slice().reverse()}

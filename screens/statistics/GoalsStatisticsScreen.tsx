@@ -254,12 +254,6 @@ function GoalsContent({
           unit="minutes"
           points={series('schedule', 'minutes')}
         />
-        <StatisticsBarChart
-          width={chartWidth}
-          title="Buổi hoàn thành trong kỳ"
-          unit="count"
-          points={series('schedule', 'sessions')}
-        />
       </StatisticsSourceSection>
 
       <StatisticsInfo>

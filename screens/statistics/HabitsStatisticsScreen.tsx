@@ -11,8 +11,8 @@
 
 import { StyleSheet, Text, View } from 'react-native';
 import Card from '../../components/ui/Card';
-import { StatisticsBarChart, StatisticsSourceNotice } from '../../components/statistics';
-import type { StatisticsChartPoint, StatisticsMetricCardProps } from '../../components/statistics';
+import { StatisticsSourceNotice } from '../../components/statistics';
+import type { StatisticsMetricCardProps } from '../../components/statistics';
 import type { PeriodKind } from '../../domain/statistics/types';
 import { fontSize, radius, spacing } from '../../constants/theme';
 import { useTheme } from '../../store/themeStore';
@@ -57,65 +57,6 @@ function getCalendarCellStatus(
     return { statusLabel: 'Chưa ghi nhận hoạt động', dotSymbol: '–' };
   }
   return { statusLabel: 'Chưa đủ dữ liệu để xác định', dotSymbol: '?' };
-}
-
-/**
- * Tạo chuỗi điểm cột cho biểu đồ "Ngày hoạt động trong kỳ / theo tháng".
- *
- * @param view Mô hình hiển thị đã tính toán
- * @param today Ngày hôm nay ('YYYY-MM-DD')
- * @param kind Loại kỳ đang xem ('day' | 'week' | 'month' | 'year')
- * @returns Danh sách điểm `StatisticsChartPoint[]`
- */
-function buildActivityChartPoints(
-  view: StatisticsView,
-  today: string,
-  kind: PeriodKind
-): StatisticsChartPoint[] {
-  const { report } = view;
-  const maxKey = kind === 'year' ? today.slice(0, 7) : today;
-  const pastOrTodayKeys = report.period.keys.filter((key) => key <= maxKey);
-
-  return pastOrTodayKeys.map((key) => {
-    const countInBucket = report.habits.activeDates.filter((date) =>
-      kind === 'year' ? date.startsWith(key) : date === key
-    ).length;
-
-    const fullLabel =
-      kind === 'year' ? `Tháng ${key.slice(5, 7)}` : statisticsDateLabel(key);
-    const shortAxisLabel =
-      kind === 'year' ? `T${Number(key.slice(5, 7))}` : key.slice(8);
-
-    return {
-      key,
-      label: fullLabel,
-      axisLabel: shortAxisLabel,
-      value: view.activityAvailable ? countInBucket : null,
-      complete: view.activityComplete,
-    };
-  });
-}
-
-/**
- * Tạo chuỗi 7 điểm cột cho biểu đồ "Phân bố theo thứ" (Thứ 2 -> Chủ nhật).
- *
- * @param view Mô hình hiển thị đã tính toán
- * @returns Danh sách 7 điểm `StatisticsChartPoint[]`
- */
-function buildWeekdayChartPoints(view: StatisticsView): StatisticsChartPoint[] {
-  return view.report.habits.weekdays.map((day) => {
-    const fullWeekdayLabel =
-      day.weekday === 7 ? 'Chủ nhật' : `Thứ ${day.weekday + 1}`;
-    const shortWeekdayLabel = day.weekday === 7 ? 'CN' : `T${day.weekday + 1}`;
-
-    return {
-      key: String(day.weekday),
-      label: fullWeekdayLabel,
-      axisLabel: shortWeekdayLabel,
-      value: view.activityAvailable ? day.activeDays : null,
-      complete: view.activityComplete,
-    };
-  });
 }
 
 /**
@@ -224,9 +165,6 @@ function HabitsContent(context: StatisticsScreenContext) {
     ? { ...measurement(habits.activeDays), complete: view.activityComplete }
     : null;
 
-  const activitySeries = buildActivityChartPoints(view, today, kind);
-  const weekdaySeries = buildWeekdayChartPoints(view);
-
   return (
     <>
       {/* 1. Chuỗi buổi hoàn thành liên tiếp từ lịch tập */}
@@ -260,26 +198,6 @@ function HabitsContent(context: StatisticsScreenContext) {
         />
 
         {kind !== 'year' ? <ActivityCalendar context={context} /> : null}
-
-        <StatisticsBarChart
-          width={chartWidth}
-          title={
-            kind === 'year'
-              ? 'Ngày hoạt động theo tháng'
-              : 'Ngày hoạt động trong kỳ'
-          }
-          unit="count"
-          unitLabel="ngày"
-          points={activitySeries}
-        />
-
-        <StatisticsBarChart
-          width={chartWidth}
-          title="Phân bố theo thứ"
-          unit="count"
-          unitLabel="ngày"
-          points={weekdaySeries}
-        />
 
         <StatisticsInfo>
           Mỗi ngày chỉ tính một lần dù có nhiều buổi hoặc xuất hiện ở cả lịch tập và

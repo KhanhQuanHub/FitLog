@@ -83,24 +83,6 @@ function collectSourceWarningNotes(source: StatisticsSource<unknown>): string[] 
 }
 
 /**
- * Định dạng mốc thời gian cập nhật gần nhất (`updatedAt` tính bằng mili-giây)
- * sang chuỗi ngày giờ tiếng Việt (`vi-VN`).
- *
- * @param updatedAt Timestamp mili-giây hoặc `null`
- * @returns Chuỗi ngày giờ hoặc `null` nếu chưa có thời điểm cập nhật
- */
-function formatUpdatedTimeLabel(updatedAt: number | null): string | null {
-  if (updatedAt === null || !Number.isFinite(updatedAt)) {
-    return null;
-  }
-  const dateObj = new Date(updatedAt);
-  if (!Number.isFinite(dateObj.getTime())) {
-    return null;
-  }
-  return dateObj.toLocaleString('vi-VN');
-}
-
-/**
  * Hiển thị một nhãn trạng thái nhỏ (badge) với 3 tông màu: trung tính, cảnh báo, thành công.
  *
  * @param props Nhãn `label` và tông màu `tone` ('neutral' | 'warning' | 'success')
@@ -233,9 +215,8 @@ export function StatisticsSourceNotice({
 }) {
   const { colors } = useTheme();
   const notes = collectSourceWarningNotes(source);
-  const updatedLabel = formatUpdatedTimeLabel(source.updatedAt);
 
-  if (notes.length === 0 && queuedCount <= 0 && !updatedLabel) {
+  if (notes.length === 0 && queuedCount <= 0) {
     return null;
   }
 
@@ -253,11 +234,6 @@ export function StatisticsSourceNotice({
           {note}
         </Text>
       ))}
-      {updatedLabel ? (
-        <Text style={[styles.message, { color: colors.textSecondary }]}>
-          Cập nhật từ máy chủ: {updatedLabel}
-        </Text>
-      ) : null}
       {source.error?.retryable && onRetry ? (
         <StatisticsRetryButton onPress={onRetry} disabled={source.status === 'loading'} />
       ) : null}

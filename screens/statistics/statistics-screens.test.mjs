@@ -45,7 +45,9 @@ for (const [title, Component] of definitions) {
     assert.ok(node.textContent.includes(title));
     assert.equal(node.querySelectorAll('[role="tab"]').length, 4);
     assert.ok(!node.textContent.includes('Cần đăng nhập'));
-    assert.ok(node.querySelector('svg'));
+    if (!['Lịch tập và mức độ hoàn thành', 'Thói quen luyện tập'].includes(title)) {
+      assert.ok(node.querySelector('svg'));
+    }
     assert.ok(node.innerHTML.includes('rgb(15, 23, 42)'));
     await render(element, true);
     assert.ok(node.innerHTML.includes('rgb(248, 250, 252)'));

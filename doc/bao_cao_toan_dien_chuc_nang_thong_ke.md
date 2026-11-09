@@ -1,4 +1,4 @@
-# BÁO CÁO TOÀN DIỆN CHỨC NĂNG THỐNG KÊ (DỰ ÁN FITLOG)
+# BÁO CÁO TOÀN DIỆN CHỨC NĂNG THỐNG KÊ
 
 Tài liệu này tổng hợp toàn bộ kiến trúc mã nguồn và luồng hoạt động của chức năng Thống kê trong ứng dụng di động **FitLog** (sử dụng kiến trúc điều hướng **React Navigation** đồng nhất toàn app), được trình bày theo cấu trúc rõ ràng, dễ hiểu:
 1. **Lấy dữ liệu nào từ Cơ sở dữ liệu (`db.json` & `AsyncStorage`) để thống kê?**

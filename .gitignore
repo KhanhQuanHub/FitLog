@@ -49,5 +49,6 @@ yarn-error.*
 
 # Local documentation & artifacts
 docs/statistics/
+doc/statistics/
 
 

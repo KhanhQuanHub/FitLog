@@ -75,7 +75,7 @@
       "userId": 1,
       "gender": "male",
       "heightCm": 175,
-      "weightKg": 60,
+      "weightKg": 61,
       "bmi": 19.6,
       "bmiGroup": "normal",
       "healthCondition": "Không có",
@@ -153,7 +153,7 @@
       "userId": 2,
       "gender": "female",
       "heightCm": 162,
-      "weightKg": 52,
+      "weightKg": 51.5,
       "bmi": 19.8,
       "bmiGroup": "normal",
       "healthCondition": "joint",
@@ -451,6 +451,24 @@
   ],
   "weightHistory": [
     {
+      "id": 6,
+      "userId": 1,
+      "weightKg": 57,
+      "date": "2026-08-01"
+    },
+    {
+      "id": 7,
+      "userId": 1,
+      "weightKg": 57.5,
+      "date": "2026-08-20"
+    },
+    {
+      "id": 11,
+      "userId": 2,
+      "weightKg": 53,
+      "date": "2026-09-01"
+    },
+    {
       "id": 1,
       "userId": 1,
       "weightKg": 58,
@@ -463,22 +481,46 @@
       "date": "2026-10-01"
     },
     {
-      "id": 3,
-      "userId": 1,
-      "weightKg": 60,
-      "date": "2026-10-20"
-    },
-    {
       "id": 4,
       "userId": 2,
       "weightKg": 53,
       "date": "2026-10-03"
     },
     {
+      "id": 3,
+      "userId": 1,
+      "weightKg": 60,
+      "date": "2026-10-20"
+    },
+    {
       "id": 5,
       "userId": 2,
       "weightKg": 52,
       "date": "2026-10-24"
+    },
+    {
+      "id": 8,
+      "userId": 1,
+      "weightKg": 60.5,
+      "date": "2026-11-01"
+    },
+    {
+      "id": 9,
+      "userId": 1,
+      "weightKg": 60.8,
+      "date": "2026-11-05"
+    },
+    {
+      "id": 12,
+      "userId": 2,
+      "weightKg": 51.5,
+      "date": "2026-11-05"
+    },
+    {
+      "id": 10,
+      "userId": 1,
+      "weightKg": 61,
+      "date": "2026-11-09"
     }
   ],
   "goals": [
@@ -793,11 +835,11 @@
       "exerciseId": 3,
       "date": "2026-11-06",
       "time": "18:00",
-      "status": "planned",
-      "durationMin": 0,
+      "status": "done",
+      "durationMin": 35,
       "plannedDurationMin": 30,
-      "caloriesBurned": 0,
-      "note": "",
+      "caloriesBurned": 160,
+      "note": "Tập Plank & Cardio bổ trợ",
       "userId": 1,
       "id": 12,
       "weightKg": 60
@@ -806,11 +848,11 @@
       "exerciseId": 3,
       "date": "2026-11-07",
       "time": "18:00",
-      "status": "planned",
-      "durationMin": 0,
+      "status": "done",
+      "durationMin": 40,
       "plannedDurationMin": 30,
-      "caloriesBurned": 0,
-      "note": "",
+      "caloriesBurned": 185,
+      "note": "Tập Squat & Core cuối tuần",
       "userId": 1,
       "id": 13
     },
@@ -837,6 +879,263 @@
       "note": "",
       "userId": 4,
       "id": 15
+    },
+    {
+      "id": 16,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-08-08",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 30,
+      "caloriesBurned": 135,
+      "note": "Khởi đầu kế hoạch tập luyện"
+    },
+    {
+      "id": 17,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-08-15",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 180,
+      "note": "Tập chân tại nhà"
+    },
+    {
+      "id": 18,
+      "userId": 1,
+      "exerciseId": 3,
+      "date": "2026-08-22",
+      "time": "18:30",
+      "status": "done",
+      "durationMin": 35,
+      "caloriesBurned": 160,
+      "note": "Cardio đốt mỡ"
+    },
+    {
+      "id": 19,
+      "userId": 1,
+      "exerciseId": 4,
+      "date": "2026-08-29",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 200,
+      "note": "Tăng cường core"
+    },
+    {
+      "id": 20,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-09-05",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 35,
+      "caloriesBurned": 160,
+      "note": "Tập ngực & tay sau"
+    },
+    {
+      "id": 21,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-09-12",
+      "time": "18:30",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 190,
+      "note": "Squat tăng cơ chân"
+    },
+    {
+      "id": 22,
+      "userId": 1,
+      "exerciseId": 3,
+      "date": "2026-09-19",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 210,
+      "note": "HIIT toàn thân"
+    },
+    {
+      "id": 23,
+      "userId": 1,
+      "exerciseId": 4,
+      "date": "2026-09-26",
+      "time": "19:00",
+      "status": "done",
+      "durationMin": 50,
+      "caloriesBurned": 230,
+      "note": "Plank tăng sức bền"
+    },
+    {
+      "id": 24,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-10-06",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 190,
+      "note": "Tập hít đất nâng cao"
+    },
+    {
+      "id": 25,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-10-13",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 210,
+      "note": "Squat kết hợp bật nhảy"
+    },
+    {
+      "id": 26,
+      "userId": 1,
+      "exerciseId": 4,
+      "date": "2026-10-20",
+      "time": "18:30",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 190,
+      "note": "Core săn chắc"
+    },
+    {
+      "id": 27,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-11-02",
+      "time": "18:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 210,
+      "note": "Cardio đầu tuần"
+    },
+    {
+      "id": 28,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-11-04",
+      "time": "18:30",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 195,
+      "note": "Tập chân & mông"
+    },
+    {
+      "id": 29,
+      "userId": 1,
+      "exerciseId": 5,
+      "date": "2026-11-08",
+      "time": "08:00",
+      "status": "done",
+      "durationMin": 30,
+      "caloriesBurned": 120,
+      "note": "Yoga kéo giãn ngày Chủ nhật"
+    },
+    {
+      "id": 30,
+      "userId": 1,
+      "exerciseId": 1,
+      "date": "2026-11-09",
+      "time": "07:30",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 195,
+      "note": "Khởi động tuần mới đầy năng lượng"
+    },
+    {
+      "id": 31,
+      "userId": 1,
+      "exerciseId": 2,
+      "date": "2026-11-11",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 45,
+      "caloriesBurned": 0,
+      "note": "Kế hoạch tập Squat"
+    },
+    {
+      "id": 32,
+      "userId": 1,
+      "exerciseId": 4,
+      "date": "2026-11-13",
+      "time": "18:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 40,
+      "caloriesBurned": 0,
+      "note": "Kế hoạch tập Plank"
+    },
+    {
+      "id": 33,
+      "userId": 1,
+      "exerciseId": 5,
+      "date": "2026-11-15",
+      "time": "08:30",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 30,
+      "caloriesBurned": 0,
+      "note": "Kế hoạch Yoga cuối tuần"
+    },
+    {
+      "id": 34,
+      "userId": 2,
+      "exerciseId": 5,
+      "date": "2026-10-15",
+      "time": "20:00",
+      "status": "done",
+      "durationMin": 40,
+      "caloriesBurned": 110,
+      "note": "Yoga thư giãn"
+    },
+    {
+      "id": 35,
+      "userId": 2,
+      "exerciseId": 4,
+      "date": "2026-10-20",
+      "time": "19:00",
+      "status": "missed",
+      "durationMin": 0,
+      "caloriesBurned": 0,
+      "note": "Bận công việc"
+    },
+    {
+      "id": 36,
+      "userId": 2,
+      "exerciseId": 5,
+      "date": "2026-11-03",
+      "time": "20:00",
+      "status": "done",
+      "durationMin": 45,
+      "caloriesBurned": 125,
+      "note": "Yoga tăng dẻo dai"
+    },
+    {
+      "id": 37,
+      "userId": 2,
+      "exerciseId": 4,
+      "date": "2026-11-06",
+      "time": "19:30",
+      "status": "done",
+      "durationMin": 30,
+      "caloriesBurned": 95,
+      "note": "Plank nhẹ nhàng"
+    },
+    {
+      "id": 38,
+      "userId": 2,
+      "exerciseId": 5,
+      "date": "2026-11-10",
+      "time": "20:00",
+      "status": "planned",
+      "durationMin": 0,
+      "plannedDurationMin": 45,
+      "caloriesBurned": 0,
+      "note": ""
     }
   ],
   "runs": [
@@ -1091,6 +1390,546 @@
       "note": "",
       "userId": 5,
       "id": 7
+    },
+    {
+      "id": 8,
+      "clientId": "r_1786512600000_seed09",
+      "userId": 1,
+      "date": "2026-08-12",
+      "startedAt": "2026-08-12T05:30:00.000Z",
+      "endedAt": "2026-08-12T05:56:40.000Z",
+      "source": "pedometer",
+      "steps": 4408,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 3.2,
+      "durationSec": 1600,
+      "pausedSec": 0,
+      "avgSpeedKmh": 7.2,
+      "paceSecPerKm": 500,
+      "cadenceSpm": 165,
+      "met": 7,
+      "weightKg": 60,
+      "calories": 187,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 500
+        },
+        {
+          "km": 2,
+          "sec": 504
+        },
+        {
+          "km": 3,
+          "sec": 529
+        }
+      ],
+      "note": "Khởi động thói quen chạy bộ"
+    },
+    {
+      "id": 9,
+      "clientId": "r_1787635800000_seed10",
+      "userId": 1,
+      "date": "2026-08-25",
+      "startedAt": "2026-08-25T05:30:00.000Z",
+      "endedAt": "2026-08-25T06:02:00.000Z",
+      "source": "pedometer",
+      "steps": 5510,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 4,
+      "durationSec": 1920,
+      "pausedSec": 0,
+      "avgSpeedKmh": 7.5,
+      "paceSecPerKm": 480,
+      "cadenceSpm": 172,
+      "met": 7.38,
+      "weightKg": 60,
+      "calories": 236,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 480
+        },
+        {
+          "km": 2,
+          "sec": 484
+        },
+        {
+          "km": 3,
+          "sec": 476
+        },
+        {
+          "km": 4,
+          "sec": 480
+        }
+      ],
+      "note": "Chạy công viên chiều mát"
+    },
+    {
+      "id": 10,
+      "clientId": "r_1789018200000_seed11",
+      "userId": 1,
+      "date": "2026-09-10",
+      "startedAt": "2026-09-10T05:30:00.000Z",
+      "endedAt": "2026-09-10T06:04:30.000Z",
+      "source": "pedometer",
+      "steps": 6198,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 4.5,
+      "durationSec": 2070,
+      "pausedSec": 0,
+      "avgSpeedKmh": 7.83,
+      "paceSecPerKm": 460,
+      "cadenceSpm": 180,
+      "met": 7.79,
+      "weightKg": 60,
+      "calories": 269,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 460
+        },
+        {
+          "km": 2,
+          "sec": 464
+        },
+        {
+          "km": 3,
+          "sec": 456
+        },
+        {
+          "km": 4,
+          "sec": 518
+        }
+      ],
+      "note": "Tập duy trì tốc độ đều"
+    },
+    {
+      "id": 11,
+      "clientId": "r_1790227800000_seed12",
+      "userId": 1,
+      "date": "2026-09-24",
+      "startedAt": "2026-09-24T05:30:00.000Z",
+      "endedAt": "2026-09-24T06:07:30.000Z",
+      "source": "pedometer",
+      "steps": 6887,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 5,
+      "durationSec": 2250,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8,
+      "paceSecPerKm": 450,
+      "cadenceSpm": 184,
+      "met": 8,
+      "weightKg": 60,
+      "calories": 300,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 450
+        },
+        {
+          "km": 2,
+          "sec": 454
+        },
+        {
+          "km": 3,
+          "sec": 446
+        },
+        {
+          "km": 4,
+          "sec": 450
+        },
+        {
+          "km": 5,
+          "sec": 454
+        }
+      ],
+      "note": "Chạy bền 5 km"
+    },
+    {
+      "id": 12,
+      "clientId": "r_1791437400000_seed13",
+      "userId": 1,
+      "date": "2026-10-08",
+      "startedAt": "2026-10-08T05:30:00.000Z",
+      "endedAt": "2026-10-08T06:06:40.000Z",
+      "source": "pedometer",
+      "steps": 6887,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 5,
+      "durationSec": 2200,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8.18,
+      "paceSecPerKm": 440,
+      "cadenceSpm": 188,
+      "met": 8.32,
+      "weightKg": 60,
+      "calories": 305,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 440
+        },
+        {
+          "km": 2,
+          "sec": 444
+        },
+        {
+          "km": 3,
+          "sec": 436
+        },
+        {
+          "km": 4,
+          "sec": 440
+        },
+        {
+          "km": 5,
+          "sec": 444
+        }
+      ],
+      "note": "Chạy buổi sáng quanh hồ"
+    },
+    {
+      "id": 13,
+      "clientId": "r_1792042200000_seed14",
+      "userId": 1,
+      "date": "2026-10-15",
+      "startedAt": "2026-10-15T05:30:00.000Z",
+      "endedAt": "2026-10-15T06:13:00.000Z",
+      "source": "pedometer",
+      "steps": 8264,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 6,
+      "durationSec": 2580,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8.37,
+      "paceSecPerKm": 430,
+      "cadenceSpm": 192,
+      "met": 8.65,
+      "weightKg": 60,
+      "calories": 372,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 430
+        },
+        {
+          "km": 2,
+          "sec": 434
+        },
+        {
+          "km": 3,
+          "sec": 426
+        },
+        {
+          "km": 4,
+          "sec": 430
+        },
+        {
+          "km": 5,
+          "sec": 434
+        },
+        {
+          "km": 6,
+          "sec": 426
+        }
+      ],
+      "note": "Tăng cự ly lên 6 km"
+    },
+    {
+      "id": 14,
+      "clientId": "r_1793683800000_seed15",
+      "userId": 1,
+      "date": "2026-11-03",
+      "startedAt": "2026-11-03T05:30:00.000Z",
+      "endedAt": "2026-11-03T06:03:36.000Z",
+      "source": "pedometer",
+      "steps": 6612,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 4.8,
+      "durationSec": 2016,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8.57,
+      "paceSecPerKm": 420,
+      "cadenceSpm": 197,
+      "met": 9,
+      "weightKg": 60,
+      "calories": 302,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 420
+        },
+        {
+          "km": 2,
+          "sec": 424
+        },
+        {
+          "km": 3,
+          "sec": 416
+        },
+        {
+          "km": 4,
+          "sec": 504
+        }
+      ],
+      "note": "Chạy phục hồi nhẹ nhàng"
+    },
+    {
+      "id": 15,
+      "clientId": "r_1793856600000_seed16",
+      "userId": 1,
+      "date": "2026-11-05",
+      "startedAt": "2026-11-05T05:30:00.000Z",
+      "endedAt": "2026-11-05T06:05:32.000Z",
+      "source": "pedometer",
+      "steps": 7163,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 5.2,
+      "durationSec": 2132,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8.78,
+      "paceSecPerKm": 410,
+      "cadenceSpm": 202,
+      "met": 9.37,
+      "weightKg": 60,
+      "calories": 333,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 410
+        },
+        {
+          "km": 2,
+          "sec": 414
+        },
+        {
+          "km": 3,
+          "sec": 406
+        },
+        {
+          "km": 4,
+          "sec": 410
+        },
+        {
+          "km": 5,
+          "sec": 430
+        }
+      ],
+      "note": "Chạy biến tốc cự ly 5 km"
+    },
+    {
+      "id": 16,
+      "clientId": "r_1794029400000_seed17",
+      "userId": 1,
+      "date": "2026-11-07",
+      "startedAt": "2026-11-07T05:30:00.000Z",
+      "endedAt": "2026-11-07T06:20:00.000Z",
+      "source": "pedometer",
+      "steps": 10331,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 7.5,
+      "durationSec": 3000,
+      "pausedSec": 0,
+      "avgSpeedKmh": 9,
+      "paceSecPerKm": 400,
+      "cadenceSpm": 207,
+      "met": 9.75,
+      "weightKg": 60,
+      "calories": 488,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 400
+        },
+        {
+          "km": 2,
+          "sec": 404
+        },
+        {
+          "km": 3,
+          "sec": 396
+        },
+        {
+          "km": 4,
+          "sec": 400
+        },
+        {
+          "km": 5,
+          "sec": 404
+        },
+        {
+          "km": 6,
+          "sec": 396
+        },
+        {
+          "km": 7,
+          "sec": 429
+        }
+      ],
+      "note": "Long run cuối tuần cự ly 7.5 km"
+    },
+    {
+      "id": 17,
+      "clientId": "r_1794115800000_seed18",
+      "userId": 1,
+      "date": "2026-11-08",
+      "startedAt": "2026-11-08T05:30:00.000Z",
+      "endedAt": "2026-11-08T05:57:20.000Z",
+      "source": "pedometer",
+      "steps": 5510,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 4,
+      "durationSec": 1640,
+      "pausedSec": 0,
+      "avgSpeedKmh": 8.78,
+      "paceSecPerKm": 410,
+      "cadenceSpm": 202,
+      "met": 9.37,
+      "weightKg": 60,
+      "calories": 256,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 410
+        },
+        {
+          "km": 2,
+          "sec": 414
+        },
+        {
+          "km": 3,
+          "sec": 406
+        },
+        {
+          "km": 4,
+          "sec": 410
+        }
+      ],
+      "note": "Chạy thả lỏng chiều Chủ nhật"
+    },
+    {
+      "id": 18,
+      "clientId": "r_1794202200000_seed19",
+      "userId": 1,
+      "date": "2026-11-09",
+      "startedAt": "2026-11-09T05:30:00.000Z",
+      "endedAt": "2026-11-09T06:03:20.000Z",
+      "source": "pedometer",
+      "steps": 6887,
+      "strideM": 0.726,
+      "strideSource": "formula",
+      "distanceKm": 5,
+      "durationSec": 2000,
+      "pausedSec": 0,
+      "avgSpeedKmh": 9,
+      "paceSecPerKm": 400,
+      "cadenceSpm": 207,
+      "met": 9.75,
+      "weightKg": 60,
+      "calories": 325,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 400
+        },
+        {
+          "km": 2,
+          "sec": 404
+        },
+        {
+          "km": 3,
+          "sec": 396
+        },
+        {
+          "km": 4,
+          "sec": 400
+        },
+        {
+          "km": 5,
+          "sec": 404
+        }
+      ],
+      "note": "Chạy buổi sáng đón tuần mới"
+    },
+    {
+      "id": 19,
+      "clientId": "r_1792301400000_seed20",
+      "userId": 2,
+      "date": "2026-10-18",
+      "startedAt": "2026-10-18T05:30:00.000Z",
+      "endedAt": "2026-10-18T05:59:10.000Z",
+      "source": "pedometer",
+      "steps": 4185,
+      "strideM": 0.669,
+      "strideSource": "formula",
+      "distanceKm": 2.8,
+      "durationSec": 1750,
+      "pausedSec": 0,
+      "avgSpeedKmh": 5.76,
+      "paceSecPerKm": 625,
+      "cadenceSpm": 143,
+      "met": 5.2,
+      "weightKg": 52,
+      "calories": 131,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 600
+        },
+        {
+          "km": 2,
+          "sec": 875
+        }
+      ],
+      "note": "Chạy nhẹ cuối tuần"
+    },
+    {
+      "id": 20,
+      "clientId": "r_1793770200000_seed21",
+      "userId": 2,
+      "date": "2026-11-04",
+      "startedAt": "2026-11-04T05:30:00.000Z",
+      "endedAt": "2026-11-04T06:05:00.000Z",
+      "source": "pedometer",
+      "steps": 5232,
+      "strideM": 0.669,
+      "strideSource": "formula",
+      "distanceKm": 3.5,
+      "durationSec": 2100,
+      "pausedSec": 0,
+      "avgSpeedKmh": 6,
+      "paceSecPerKm": 600,
+      "cadenceSpm": 149,
+      "met": 5.5,
+      "weightKg": 52,
+      "calories": 167,
+      "splits": [
+        {
+          "km": 1,
+          "sec": 600
+        },
+        {
+          "km": 2,
+          "sec": 600
+        },
+        {
+          "km": 3,
+          "sec": 697
+        }
+      ],
+      "note": "Chạy bộ giữ dáng"
     }
   ]
 }

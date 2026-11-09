@@ -403,7 +403,7 @@ test('Root guard chờ phục hồi phiên, chỉ mở Login/Register hoặc Mai
   assert.deepEqual([...node.querySelectorAll('[data-route]')].map(item => item.dataset.route), ['Onboarding']);
   globalThis.statsRouter.setup = { weight: 60, height: 175 };
   await render(h(RootNavigator));
-  assert.deepEqual([...node.querySelectorAll('[data-route]')].map(item => item.dataset.route), ['Main', 'EditTraining']);
+  assert.deepEqual([...node.querySelectorAll('[data-route]')].map(item => item.dataset.route), ['Main', 'ChangePassword', 'EditTraining']);
   globalThis.statsRouter.auth.isLoggedIn = false;
   await render(h(RootNavigator));
   assert.deepEqual([...node.querySelectorAll('[data-route]')].map(item => item.dataset.route), ['Login', 'Register', 'ForgotPassword']);

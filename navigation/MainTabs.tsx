@@ -25,7 +25,7 @@ import RunScreen from '../screens/running/RunScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import ScheduleScreen from '../screens/ScheduleScreen';
 import TodayScreen from '../screens/TodayScreen';
-import ScheduleScreen from '../screens/ScheduleScreen';
+import StatisticsNavigator from './StatisticsNavigator';
 import {
   fontWeight,
   layout,
@@ -305,21 +305,6 @@ export function FitLogBottomTabBar({
         );
       })}
     </View>
-  );
-}
-
-function StatsScreen() {
-  const { colors } = useTheme();
-  return (
-    <SafeAreaView
-      style={[styles.placeholderContainer, { backgroundColor: colors.background }]}
-      edges={['top', 'left', 'right']}
-    >
-      <Text style={[styles.screenTitle, { color: colors.text }]}>Thống kê</Text>
-      <Text style={[styles.placeholderSub, { color: colors.textMuted }]}>
-        Tổng hợp quãng đường và năng lượng tiêu hao
-      </Text>
-    </SafeAreaView>
   );
 }
 

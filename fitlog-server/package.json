@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "build-db": "node build-db.js",
+        "seed:stats": "node seed-statistics.mjs",
         "start": "node migrate-db.js && json-server --watch db.json --host 0.0.0.0 --port 3000 --middlewares ./auth.js",
         "reset": "node build-db.js && npm start"
     },

@@ -60,6 +60,7 @@
     "api:raw": "json-server --watch fitlog-server/db.json --host 0.0.0.0 --port 3000",
     "server": "npm --prefix fitlog-server start",
     "server:reset": "npm --prefix fitlog-server run reset",
+    "seed:stats": "npm --prefix fitlog-server run seed:stats",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
